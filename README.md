@@ -1,15 +1,49 @@
 # Getting Started with Create React App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app). This requires [node.js](https://nodejs.org/en/download) installation.
 
-## Available Scripts
+## Project Directory
 
-In the project directory, you can run:
+- backend/
+  - server.js
+  - ...
+- frontend/
+  - assets/
+    - ...
+  - App.js
+  - ...
+
+This project uses **PostgreSQL** database. For MySQL use, replace `pg` with `mysql` in the `backend/package.json`. For MariaDB, replace `pg` with `mariadb`.
+
+To recreate this structure, use
+
+### `npx create-react-app <your-folder>`
+
+Provide `.env` file located on the `backend/` folder containing the following:
+
+```env
+DB_HOST='localhost' # or ip address
+DB_PORT='8000' # or ip port
+DB_USER='username'
+DB_PASSWORD='password'
+DB_NAME='database_name'
+```
+
+Then install `node_modules` on both folders.
+
+## Running the Project
+
+To run the project, consider 2 creating cmds/bash pointing to each folder: `backend/` and `frontend/`.
+
+In backend, run
+
+### `node server.js`
+
+In frontend, run
 
 ### `npm start`
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+To check if the database has connected, open http://localhost:3000/. The return json will display success and error.
 
 The page will reload when you make changes.\
 You may also see any lint errors in the console.
