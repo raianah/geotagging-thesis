@@ -27,7 +27,22 @@ app.get("/", async (req, res) => {
     }
 });
 
+// ✅ Retry logic variables
+const RETRY_INTERVAL = 5000; // 5 seconds
 
-app.listen(3000, () => {
-    console.log(`Database connected via http://localhost:3000.`);
-});
+async function startServer() {
+    try {
+        await pool.query("SELECT NOW()");
+        console.log("✅ Database connected successfully.");
+
+        app.listen(3000, () => {
+            console.log(`🚀 Server running at http://localhost:3000.`);
+        });
+    } catch (error) {
+        console.error("❌ Failed to connect to the database:", error.message);
+        console.log(`🔄 Retrying in ${RETRY_INTERVAL / 1000} seconds...`);
+        setTimeout(startServer, RETRY_INTERVAL);
+    }
+}
+
+startServer();
