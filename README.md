@@ -45,6 +45,8 @@ In frontend, run
 
 To check if the database has connected, open http://localhost:3000/. The return json will display success and error.
 
+Note: Opening the `backend/server.js` via `node server.js` will open a port at 3000. You may be prompted to use port 3001 instead. For reference, http://localhost:3000/ for backend and http://localhost:3001/ for frontend.
+
 The page will reload when you make changes.\
 You may also see any lint errors in the console.
 
