@@ -27,18 +27,21 @@ body, html {
 }
 
 .registration-image {
-    flex: 1; 
-}
-
-.registration-image img {
-    width: 100%; 
-    height: auto; 
-    border-radius: 16px; 
-}
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 50%;
+  }
+  
+  .registration-image img {
+    width: 100%;
+    max-width: 400px; /* Adjust this to fit within the card */
+    height: auto;
+    display: block;
+    object-fit: contain; /* Keeps full image visible */
+  }
 
 .registration-content {
-    flex: 1; 
-    display: flex;
     flex-direction: column;
     gap: 24px; 
 }
@@ -49,6 +52,69 @@ body, html {
     font-weight: 600;
     text-align: center;
 }
+
+.phone-input-container {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 5px;
+    width: 250px; /* Adjust width as needed */
+  }
+  
+  .flag {
+    font-size: 20px; /* Adjust size as needed */
+    margin-right: 5px;
+  }
+  
+  .country-code {
+    font-size: 16px; /* Adjust size as needed */
+    margin-right: 5px;
+  }
+  
+  .phone-input {
+    border: none;
+    outline: none;
+    flex: 1; /* Take up remaining space */
+    font-size: 16px; /* Adjust size as needed */
+  }
+
+  .password-container {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+
+.password-strength {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 14px;
+	font-weight: bold;
+
+    margin-bottom: 10px;
+    margin-top: -10px;
+    margin-left: 5px;
+}
+
+.strength-bar {
+	height: 5px;
+	border-radius: 5px;
+	transition: width 0.3s ease-in-out;
+}
+
+.password-suggestions {
+	margin-top: 5px;
+	font-size: 12px;
+	color: #e74c3c;
+	list-style-type: none;
+	padding-left: 0;
+}
+
+.password-suggestions li {
+	margin-bottom: 2px;
+}
+
 
 .registration-subtitle {
     color: #9e9e9e;
@@ -143,6 +209,15 @@ body, html {
     background-color: #3f51b5; 
 }
 
+.name-container {
+    display: flex;
+    gap: 10px;
+}
+
+.name-container input {
+    flex: 1;
+}
+
 
 @media (max-width: 768px) {
     .registration-card {
@@ -170,25 +245,8 @@ body, html {
     .role-modal-content button {
         font-size: 14px; 
     }
-}
 
-
-@media (min-width: 769px) {
-    .registration-form {
-        display: grid; 
-        gap: 15px; 
-    }
-
-    .registration-form input,
-    .registration-form select {
-        margin-bottom: 0; 
-    }
-
-    .terms-container {
-        grid-column: span 2; 
-    }
-
-    .registration-form button {
-        grid-column: span 2; 
+    .registration-image {
+        margin: auto;
     }
 }

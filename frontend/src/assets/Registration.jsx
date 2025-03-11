@@ -1,192 +1,107 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import Input from "react-phone-number-input/input";
+import { useNavigate } from "react-router-dom";
+import "react-phone-number-input/style.css";
 import "../css/RegistrationCSS.css";
-import sampleImg from "../img/sample.jpg"; // Adjust the path as necessary
+import logo from '../img/logo.png';
 
 export default function RegistrationForm() {
-    const [firstName, setFirstName] = useState("");
-    const [lastName, setLastName] = useState("");
-    const [email, setEmail] = useState("");
-    const [phone, setPhone] = useState("");
-    const [barangay, setBarangay] = useState("");
-    const [termsAccepted, setTermsAccepted] = useState(false);
-    const [showRoleSelection, setShowRoleSelection] = useState(false);
+	const [formData, setFormData] = useState({ firstName: "", lastName: "", email: "", phone: "", password: "" });
+	const [passwordStrength, setPasswordStrength] = useState({ score: 0, label: "", color: "" });
+	const [passwordSuggestions, setPasswordSuggestions] = useState([]);
 
-    const barangays = [
-        "Baclaran",
-        "Barangay 1 (Poblacion)",
-        "Barangay 2 (Poblacion)",
-        "Barangay 3 (Poblacion)",
-        "Barangay 4 (Poblacion)",
-        "Barangay 5 (Poblacion)",
-        "Barangay 6 (Poblacion)",
-        "Barangay 7 (Poblacion)",
-        "Barangay 8 (Poblacion)",
-        "Barangay 9 (Poblacion)",
-        "Barangay 10 (Poblacion)",
-        "Barangay 11 (Poblacion)",
-        "Barangay 12 (Poblacion)",
-        "Calan",
-        "Caloocan",
-        "Calzada",
-        "Canda",
-        "Carenahan",
-        "Caybunga",
-        "Cayponce",
-        "Dalig",
-        "Dao",
-        "Dilao",
-        "Duhatan",
-        "Durungao",
-        "Gimalas",
-        "Gumamela",
-        "Lagnas",
-        "Lanatan",
-        "Langgangan",
-        "Lucban Pook",
-        "Lucban Putol",
-        "Magabe",
-        "Malalay",
-        "Munting Tubig",
-        "Navotas",
-        "Palikpikan",
-        "Patugo",
-        "Pooc",
-        "Sambat",
-        "Sampaga",
-        "San Juan",
-        "San Piro",
-        "Santol",
-        "Sukol",
-        "Tactac",
-        "Taludtud",
-        "Tanggoy"
-    ];    
+    const navigate = useNavigate();
 
-    const handleRegister = (e) => {
-        e.preventDefault();
-        if (termsAccepted) {
-            setShowRoleSelection(true);
-        } else {
-            alert("You must accept the terms and conditions.");
-        }
-    };
+	const handleChange = (e) => {
+		const { name, value } = e.target;
+		setFormData({ ...formData, [name]: value });
+		if (name === "password") checkPasswordStrength(value);
+	};
 
-    const handleRoleSelect = (role) => {
-        if (role === "business") {
-            window.location.href = "/business-dashboard";
-        } else if (role === "customer") {
-            window.location.href = "/customer-dashboard";
-        }
-    };
+	const handlePhoneChange = (value) => {
+		setFormData({ ...formData, phone: value });
+	};
 
-    return (
-        <div className="registration-container">
-            <div className="registration-card">
-                <div className="registration-image">
-                    <img src={sampleImg} alt="ASF Detection" />
-                </div>
+	const checkPasswordStrength = (password) => {
+		let score = 0;
+		let suggestions = [];
 
-                <div className="registration-content">
-                    <h1 className="registration-title">Create Your Account</h1>
-                    <p className="registration-subtitle">
-                        Enter your details to get started!
-                    </p>
+		if (password.length >= 8) score++; else suggestions.push("Use at least 8 characters");
+		if (/[A-Z]/.test(password) && /[a-z]/.test(password)) score++; else suggestions.push("Mix uppercase & lowercase letters");
+		if (/\d/.test(password)) score++; else suggestions.push("Add at least one number");
+		if (/[\W_]/.test(password)) score++; else suggestions.push("Include special characters (!@#$%)");
 
-                    <form className="registration-form" onSubmit={handleRegister}>
-                        <input
-                            type="text"
-                            placeholder="First Name"
-                            value={firstName}
-                            onChange={(e) => setFirstName(e.target.value)}
-                            required
-                        />
-                        
-                        <input
-                            type="text"
-                            placeholder="Last Name"
-                            value={lastName}
-                            onChange={(e) => setLastName(e.target.value)}
-                            required
-                        />
-                        
-                        <input
-                            type="email"
-                            placeholder="Email Address"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                        />
-                        
-                        <input
-                            type="tel"
-                            placeholder="Phone Number"
-                            value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
-                            required
-                        />
-                        
-                        <select
-                            value={barangay}
-                            onChange={(e) => setBarangay(e.target.value)}
-                            required
-                        >
-                            <option value="" disabled>Select Barangay</option>
-                            {barangays.map((barangay, index) => (
-                                <option key={index} value={barangay}>
-                                    {barangay}
-                                </option>
-                            ))}
-                        </select>
-                        
-                        <div className="terms-container">
-                            <input
-                                type="checkbox"
-                                checked={termsAccepted}
-                                onChange={() => setTermsAccepted(!termsAccepted)}
-                                required
-                            />
-                            <label>
-                                I agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>.
-                            </label>
-                        </div>
-                        
-                        <button type="submit">Create Your Account</button>
-                    </form>
-                </div>
-            </div>
+		const strengthLevels = [
+			{ label: "Weak", color: "#e74c3c" },
+			{ label: "Fair", color: "#f39c12" },
+			{ label: "Good", color: "#3498db" },
+			{ label: "Strong", color: "#2ecc71" },
+            { label: "Very Strong", color: "#3be08e" }
+		];
 
-            {showRoleSelection && (
-                <div className="role-modal">
-                    <div className="role-modal-content">
-                        <h2>Choose Your Role</h2>
-                        <button
-                            className="role-business"
-                            onClick={() => handleRoleSelect("business")}
-                        >
-                            Business Hog Owner
-                        </button>
-                        <button
-                            className="role-customer"
-                            onClick={() => handleRoleSelect("customer")}
-                        >
-                            Customer
-                        </button>
-                        <button
-                            style={{
-                                marginTop: "16px",
-                                background: "none",
-                                color: "#9e9e9e",
-                                border: "none",
-                                fontSize: "14px",
-                                cursor: "pointer",
-                            }}
-                            onClick={() => setShowRoleSelection(false)}
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
+		setPasswordStrength(strengthLevels[score] || { label: "Very Weak", color: "#e74c3c" });
+		setPasswordSuggestions(suggestions);
+	};
+
+	const handleRegister = async (e) => {
+		e.preventDefault();
+		if (!formData.phone || formData.phone.length !== 13) return alert("Phone number must be exactly 13 characters including +63.");
+		if (passwordStrength.score < 2) return alert("Password must be at least 'Good' strength.");
+		try {
+			const response = await fetch("http://localhost:3000/register", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(formData),
+			});
+			const data = await response.json();
+			if (response.ok) {
+                alert("Registration successful!");
+                navigate("/login");
+            } else {
+                alert(data.error || "Registration failed.");
+            }
+		} catch (error) {
+			console.error("Error:", error);
+			alert("Something went wrong.");
+		}
+	};
+
+	return (
+		<div className="registration-container">
+			<div className="registration-card">
+				<div className="registration-image"><img src={logo} alt="ASF Detection" /></div>
+				<div className="registration-content">
+					<h1 className="registration-title">Balayan Hog Registration Form</h1>
+					<p className="registration-subtitle">For hog raisers of Balayan, Batangas.</p>
+					<form className="registration-form" onSubmit={handleRegister}>
+						<div className="name-container">
+							<input type="text" name="firstName" placeholder="First Name" value={formData.firstName} onChange={handleChange} required />
+							<input type="text" name="lastName" placeholder="Last Name" value={formData.lastName} onChange={handleChange} required />
+						</div>
+
+						<Input country="PH" international withCountryCallingCode value={formData.phone} onChange={handlePhoneChange} />
+
+						<input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} required />
+
+						<div className="password-container">
+							<input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} required />
+							<div className="password-strength">
+								<div className="strength-bar" style={{ background: passwordStrength.color, width: `${(passwordStrength.score + 1) * 25}%` }}></div>
+								<span style={{ color: passwordStrength.color }}>{passwordStrength.label}</span>
+							</div>
+							{passwordSuggestions.length > 0 && (
+								<ul className="password-suggestions">
+									{passwordSuggestions.map((suggestion, index) => (
+										<li key={index}>{suggestion}</li>
+									))}
+								</ul>
+							)}
+						</div>
+
+						<button type="submit">Register</button>
+					</form>
+				</div>
+			</div>
+		</div>
+	);
 }
