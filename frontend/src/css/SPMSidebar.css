@@ -4,14 +4,13 @@
     background: linear-gradient(135deg, #1e1e2f, #2a2a3d);
     color: white;
     padding: 20px;
-    border-right: 3px solid #3b3b5c;
     overflow-y: auto;
     height: 100vh;
     display: flex;
     flex-direction: column;
     font-family: "Poppins", sans-serif;
     position: relative;
-  }
+}
   
   .sidebar h2 {
     font-size: 22px;

@@ -1,0 +1,346 @@
+@import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@300;400;600;700&display=swap');
+
+* {
+    font-family: 'Work Sans', sans-serif;
+    user-select: none;
+}
+
+:root {
+    --navbar-bg: #C0C0BF;
+    --navbar-text: #000;
+    --dashboard-bg: #dbdbd8;
+    --dashboard-text: #000;
+    --sidebar-bg: #b4b4b4;
+    --sidebar-text: #222;
+    --icon-color: #000;
+
+    --sidebar-width-collapsed: 4rem;
+    --sidebar-width-expanded: 11rem;
+
+    --navbar-left-default: 6.5rem;
+    --navbar-left-expanded: 13.5rem;
+}
+
+.dark-mode {
+    --navbar-bg: #2B2B2B;
+    --navbar-text: #F8F8F8;
+    --dashboard-bg: #3d3d3d;
+    --dashboard-text: #F8F8F8;
+    --sidebar-bg: #1E1E1E;
+    --sidebar-text: #F8F8F8;
+    --icon-color: #F8F8F8;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem; /* Adjust spacing between logo and text */
+    margin-bottom: 5rem;
+}
+
+.icon {
+    color: var(--icon-color);
+    font-size: 200%;
+}
+
+.logo img {
+    width: 60px;
+    height: 60px;
+    margin: auto;
+}
+
+.logo span {
+    font-size: 17px;
+    color: var(--sidebar-text);
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+/* Hide text when sidebar is collapsed */
+.nav-sidebar:not(.open) .logo span {
+    display: none;
+}
+
+.nav-sidebar.open .logo span {
+    display: inline;
+    opacity: 1;
+}
+
+
+/* General Navbar Styling */
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--navbar-bg);
+    padding: 0.75rem 1.25rem;
+    box-shadow: 0 0.125rem 0.3125rem rgba(0, 0, 0, 0.2);
+    position: fixed;
+    height: 4rem;
+    top: 0;
+    left: var(--navbar-left-default); /* Default Left */
+    min-width: 250px;
+    width: calc(100% - var(--navbar-left-default)); /* Adjust Width */
+    transition: left 0.3s ease-in-out, width 0.3s ease-in-out;
+    color: var(--navbar-text);
+    border-left: none;
+}
+
+/* Left Side: Hamburger & Date */
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 3rem;
+}
+
+.menu-toggle {
+    display: flex;
+    justify-content: center;
+    font-size: 1.625rem;
+    cursor: pointer;
+    transition: transform 0.3s ease-in-out;
+    color: var(--icon-color);
+}
+
+.menu-toggle.open {
+    transform: rotate(90deg); /* Smooth transition to 'X' */
+}
+
+.date-container {
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+    white-space: nowrap;
+    gap: 0.5rem; /* Margin between calendar icon and date */
+}
+
+.calendar-icon {
+    font-size: 1.25rem;
+    color: var(--icon-color);
+}
+
+/* Right Side: Dark Mode Toggle & Profile */
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    margin-right: 9rem;
+}
+
+.dark-mode-toggle {
+    display: flex;
+    cursor: pointer;
+    font-size: 120%;
+    justify-content: center;
+    align-items: center;
+    color: var(--icon-color);
+}
+
+/* Profile Section */
+.profile-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    /* overflow: hidden; */
+    white-space: nowrap;
+    position: relative;
+    cursor: pointer;
+}
+
+.profile-container .profile-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 9vw;
+}
+
+.profile-container .user-name {
+    font-size: 1rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.profile-container .user-role {
+    font-weight: bold;
+    font-style: italic;
+    font-size: 0.9rem;
+    color: var(--sidebar-text);
+}
+
+.profile-dropdown {
+    position: absolute;
+    margin-top: 10px;
+    top: 100%;
+    right: 0;
+    background: var(--sidebar-bg);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+    width: 12rem;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    z-index: 999;
+    padding: 0.5rem 0; /* Adds some space inside */
+}
+
+.profile-dropdown button {
+    background: none;
+    border: none;
+    padding: 12px 15px; /* Better spacing */
+    font-size: 1rem;
+    color: var(--sidebar-text);
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem; /* Space between icon and text */
+}
+
+.profile-dropdown button:hover {
+    background: var(--sidebar-hover);
+}
+
+/* Ensuring the icons inside the buttons are properly aligned */
+.profile-dropdown button .dropdown-icon {
+    font-size: 1.2rem;
+}
+
+/* Sidebar - Sliding Container */
+.nav-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: var(--sidebar-width-collapsed);
+    height: 100vh;
+    background: var(--sidebar-bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: width 0.3s ease-in-out;
+
+    padding: 1.25rem;
+}
+
+/* Sidebar Expanded */
+.nav-sidebar.open {
+    width: var(--sidebar-width-expanded); /* Adjusted via variable */
+}
+
+/* Navbar Adjusts When Sidebar Expands */
+.nav-sidebar.open ~ .navbar {
+    left: var(--navbar-left-expanded); /* Moves navbar left dynamically */
+    width: calc(100% - var(--navbar-left-expanded)); /* Adjusts width dynamically */
+}
+
+/* Sidebar Links */
+.nav-links {
+    list-style: none;
+    padding: 0;
+    width: 100%;
+}
+
+.nav-links li {
+    display: flex;
+    align-items: center;
+    padding: 1.3rem 1rem;
+    transition: background 0.3s;
+}
+
+.nav-links a {
+    display: flex;
+    align-items: center;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 1.125rem;
+    white-space: nowrap;
+    transition: 0.3s;
+}
+
+/* Icons-Only When Collapsed */
+.nav-links a .icon {
+    font-size: 1.6rem;
+    margin-right: 0;
+    color: var(--icon-color);
+}
+
+.nav-sidebar .nav-links a span {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+/* Text Appears When Sidebar Expands */
+.nav-sidebar.open .nav-links a .icon {
+    margin-right: 1rem;
+}
+
+.nav-sidebar.open .nav-links a span {
+    display: inline;
+    opacity: 1;
+}
+
+
+
+/* Dashboard CSS */
+
+.dashboard-container {
+    position: absolute;
+    top: 5.5rem;
+    left: var(--navbar-left-default);
+    width: calc(100% - var(--navbar-left-default));
+    height: calc(100vh - 4rem);
+    transition: left 0.3s ease-in-out, width 0.3s ease-in-out;
+}
+
+.nav-sidebar.open ~ .dashboard-container {
+    left: var(--navbar-left-expanded);
+    width: calc(100% - var(--navbar-left-expanded));
+}
+
+
+/* Dark Mode */
+.dark-mode .dashboard-container {
+    background: var(--dashboard-bg);
+    color: #F8F8F8;
+}
+
+/* Responsive Adjustments */
+@media screen and (max-width: 768px) {
+    :root {
+        --sidebar-width-collapsed: 0; /* Hide sidebar on mobile */
+        --navbar-left-expanded: 0; /* No left offset when expanded */
+    }
+
+    .navbar {
+        left: 0;
+        width: 100%; /* Full width for navbar on mobile */
+    }
+
+    .nav-sidebar {
+        display: none; /* Hide sidebar by default on mobile */
+    }
+
+    .nav-sidebar.open {
+        display: flex; /* Show sidebar when open */
+        width: 100%; /* Full width when expanded */
+        top: 5rem; /* Start below the navbar */
+        height: calc(100vh - 4rem); /* Full height minus navbar height */
+        transition: width 0.3s ease-in-out; /* Animation for width */
+        text-align: center; /* Ensures text stays centered */
+        padding-left: 35%;
+    }
+
+    .nav-sidebar.open ~ .navbar {
+        left: 0; /* No left offset when sidebar open */
+        width: 100%; /* Full width when sidebar open */
+    }
+
+    .user-name, .user-role {
+        display: none; /* Hide profile info on mobile */
+    }
+
+    .nav-right {
+        margin-right: -30px;
+    }
+}
