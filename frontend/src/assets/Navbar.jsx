@@ -36,9 +36,10 @@ const Navbar = ({ darkMode, setDarkMode, isOpen, setIsOpen }) => {
 
     // Simulated User Data
     const userName = "Spongebob Squarepants";
-    const userRole = "Employee\nDashboard"; // or "Hog Owner"
+    const userRole = "Employee\nDashboard";
 
-    // Date, Month Day, Year format
+    // Up Next: Linking dashboard to accounts.
+
     useEffect(() => {
         const updateDate = () => {
             const date = new Date();
@@ -80,22 +81,18 @@ const Navbar = ({ darkMode, setDarkMode, isOpen, setIsOpen }) => {
                     </ul>
                 </div>
 
-                {/* Navbar */}
                 <nav className="navbar">
                     <div className="nav-left">
-                        {/* Animated Menu Toggle */}
                         <div className={`menu-toggle ${isOpen ? "open" : ""}`} onClick={() => setIsOpen(!isOpen)}>
                             {isOpen ? <FiX /> : <FiMenu />}
                         </div>
 
-                        {/* Date with Calendar Icon */}
                         <div className="date-container">
                             <MdOutlineCalendarToday className="calendar-icon" />
                             <span>{currentDate}</span>
                         </div>
                     </div>
 
-                    {/* Right Side: Dark Mode & Profile */}
                     <div className="nav-right">
                         <div className="dark-mode-toggle" onClick={() => setDarkMode(!darkMode)}>
                             {darkMode ? <FiSun /> : <FiMoon />}

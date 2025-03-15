@@ -1,4 +1,3 @@
-/* Sidebar Styling */
 .sidebar {
     width: 320px;
     background: linear-gradient(135deg, #1e1e2f, #2a2a3d);
@@ -11,22 +10,22 @@
     font-family: "Poppins", sans-serif;
     position: relative;
 }
-  
-  .sidebar h2 {
+
+.sidebar h2 {
     font-size: 22px;
     font-weight: 600;
     text-align: center;
     margin-bottom: 15px;
     color: #ffcc00;
-  }
-  
-  .sidebar ol {
+}
+
+.sidebar ol {
     list-style: none;
     padding: 0;
     margin-top: 10px;
-  }
-  
-  .sidebar ol li {
+}
+
+.sidebar ol li {
     background: rgba(255, 255, 255, 0.1);
     padding: 12px;
     margin-bottom: 8px;
@@ -35,29 +34,26 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-  }
-  
-  .sidebar ol li small {
+}
+
+.sidebar ol li small {
     color: #ffcc00;
     font-size: 12px;
-  }
-  
-  /* Map container to align properly */
-  .map-container {
+}
+
+.map-container {
     display: flex;
     height: 100vh;
     width: 100vw;
-  }
-  
-  /* Map */
-  .map {
+}
+
+.map {
     flex-grow: 1;
     height: 100vh;
     width: 100%;
-  }
-  
-  /* Traffic Legend Overlay */
-  .traffic-legend {
+}
+
+.traffic-legend {
     position: absolute;
     top: 10px;
     left: 50%;
@@ -72,22 +68,21 @@
     font-size: 14px;
     font-weight: bold;
     z-index: 1000;
-  }
-  
-  .legend-item {
+}
+
+.legend-item {
     display: flex;
     align-items: center;
-  }
-  
-  .color-box {
+}
+
+.color-box {
     width: 18px;
     height: 18px;
     border-radius: 4px;
     margin-right: 8px;
-  }
-  
-  .green { background-color: green; }
-  .yellow { background-color: yellow; }
-  .red { background-color: red; }
-  .blue { background-color: blue; }
-  
+}
+
+.green { background-color: green; }
+.yellow { background-color: yellow; }
+.red { background-color: red; }
+.blue { background-color: blue; }

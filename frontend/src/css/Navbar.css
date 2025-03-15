@@ -35,7 +35,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.75rem; /* Adjust spacing between logo and text */
+    gap: 0.75rem;
     margin-bottom: 5rem;
 }
 
@@ -57,7 +57,7 @@
     transition: opacity 0.3s ease-in-out;
 }
 
-/* Hide text when sidebar is collapsed */
+
 .nav-sidebar:not(.open) .logo span {
     display: none;
 }
@@ -68,7 +68,7 @@
 }
 
 
-/* General Navbar Styling */
+
 .navbar {
     display: flex;
     align-items: center;
@@ -79,15 +79,15 @@
     position: fixed;
     height: 4rem;
     top: 0;
-    left: var(--navbar-left-default); /* Default Left */
+    left: var(--navbar-left-default);
     min-width: 250px;
-    width: calc(100% - var(--navbar-left-default)); /* Adjust Width */
+    width: calc(100% - var(--navbar-left-default));
     transition: left 0.3s ease-in-out, width 0.3s ease-in-out;
     color: var(--navbar-text);
     border-left: none;
 }
 
-/* Left Side: Hamburger & Date */
+
 .nav-left {
     display: flex;
     align-items: center;
@@ -104,7 +104,7 @@
 }
 
 .menu-toggle.open {
-    transform: rotate(90deg); /* Smooth transition to 'X' */
+    transform: rotate(90deg);
 }
 
 .date-container {
@@ -112,7 +112,7 @@
     align-items: center;
     font-size: 1rem;
     white-space: nowrap;
-    gap: 0.5rem; /* Margin between calendar icon and date */
+    gap: 0.5rem;
 }
 
 .calendar-icon {
@@ -120,7 +120,7 @@
     color: var(--icon-color);
 }
 
-/* Right Side: Dark Mode Toggle & Profile */
+
 .nav-right {
     display: flex;
     align-items: center;
@@ -137,12 +137,12 @@
     color: var(--icon-color);
 }
 
-/* Profile Section */
+
 .profile-container {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    /* overflow: hidden; */
+   
     white-space: nowrap;
     position: relative;
     cursor: pointer;
@@ -180,13 +180,13 @@
     display: flex;
     flex-direction: column;
     z-index: 999;
-    padding: 0.5rem 0; /* Adds some space inside */
+    padding: 0.5rem 0;
 }
 
 .profile-dropdown button {
     background: none;
     border: none;
-    padding: 12px 15px; /* Better spacing */
+    padding: 12px 15px;
     font-size: 1rem;
     color: var(--sidebar-text);
     cursor: pointer;
@@ -194,19 +194,19 @@
     width: 100%;
     display: flex;
     align-items: center;
-    gap: 0.75rem; /* Space between icon and text */
+    gap: 0.75rem;
 }
 
 .profile-dropdown button:hover {
     background: var(--sidebar-hover);
 }
 
-/* Ensuring the icons inside the buttons are properly aligned */
+
 .profile-dropdown button .dropdown-icon {
     font-size: 1.2rem;
 }
 
-/* Sidebar - Sliding Container */
+
 .nav-sidebar {
     position: fixed;
     top: 0;
@@ -222,18 +222,18 @@
     padding: 1.25rem;
 }
 
-/* Sidebar Expanded */
+
 .nav-sidebar.open {
-    width: var(--sidebar-width-expanded); /* Adjusted via variable */
+    width: var(--sidebar-width-expanded);
 }
 
-/* Navbar Adjusts When Sidebar Expands */
+
 .nav-sidebar.open ~ .navbar {
-    left: var(--navbar-left-expanded); /* Moves navbar left dynamically */
-    width: calc(100% - var(--navbar-left-expanded)); /* Adjusts width dynamically */
+    left: var(--navbar-left-expanded);
+    width: calc(100% - var(--navbar-left-expanded));
 }
 
-/* Sidebar Links */
+
 .nav-links {
     list-style: none;
     padding: 0;
@@ -257,7 +257,6 @@
     transition: 0.3s;
 }
 
-/* Icons-Only When Collapsed */
 .nav-links a .icon {
     font-size: 1.6rem;
     margin-right: 0;
@@ -270,7 +269,6 @@
     transition: opacity 0.3s;
 }
 
-/* Text Appears When Sidebar Expands */
 .nav-sidebar.open .nav-links a .icon {
     margin-right: 1rem;
 }
@@ -282,7 +280,7 @@
 
 
 
-/* Dashboard CSS */
+
 
 .dashboard-container {
     position: absolute;
@@ -299,45 +297,45 @@
 }
 
 
-/* Dark Mode */
+
 .dark-mode .dashboard-container {
     background: var(--dashboard-bg);
     color: #F8F8F8;
 }
 
-/* Responsive Adjustments */
+
 @media screen and (max-width: 768px) {
     :root {
-        --sidebar-width-collapsed: 0; /* Hide sidebar on mobile */
-        --navbar-left-expanded: 0; /* No left offset when expanded */
+        --sidebar-width-collapsed: 0;
+        --navbar-left-expanded: 0;
     }
 
     .navbar {
         left: 0;
-        width: 100%; /* Full width for navbar on mobile */
+        width: 100%;
     }
 
     .nav-sidebar {
-        display: none; /* Hide sidebar by default on mobile */
+        display: none;
     }
 
     .nav-sidebar.open {
-        display: flex; /* Show sidebar when open */
-        width: 100%; /* Full width when expanded */
-        top: 5rem; /* Start below the navbar */
-        height: calc(100vh - 4rem); /* Full height minus navbar height */
-        transition: width 0.3s ease-in-out; /* Animation for width */
-        text-align: center; /* Ensures text stays centered */
+        display: flex;
+        width: 100%;
+        top: 5rem;
+        height: calc(100vh - 4rem);
+        transition: width 0.3s ease-in-out;
+        text-align: center;
         padding-left: 35%;
     }
 
     .nav-sidebar.open ~ .navbar {
-        left: 0; /* No left offset when sidebar open */
-        width: 100%; /* Full width when sidebar open */
+        left: 0;
+        width: 100%;
     }
 
     .user-name, .user-role {
-        display: none; /* Hide profile info on mobile */
+        display: none;
     }
 
     .nav-right {
