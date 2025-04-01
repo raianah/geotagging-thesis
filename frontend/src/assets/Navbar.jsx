@@ -14,7 +14,8 @@ import "../css/Navbar.css";
 
 import Logo from "../img/logo.png";
 
-const Navbar = ({ darkMode, setDarkMode, isOpen, setIsOpen }) => {
+// Add currentUser as a prop
+const Navbar = ({ darkMode, setDarkMode, isOpen, setIsOpen, currentUser }) => {
     const [currentDate, setCurrentDate] = useState("");
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
@@ -24,21 +25,17 @@ const Navbar = ({ darkMode, setDarkMode, isOpen, setIsOpen }) => {
         // Implement navigation logic
     };
 
+    const handleViewOwners = () => {
+        console.log("Navigate to hog shop ecommerce page");
+        // Implement ecommerce logic
+    };
+
     const handleLogout = () => {
         console.log("User logged out");
-        // Implement logout logic
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userData');
+        window.location.href = '/login';
     };
-
-    const handleViewOwners = () => {
-        console.log("View hog owners");
-        // Implement navigation logic
-    };
-
-    // Simulated User Data
-    const userName = "Spongebob Squarepants";
-    const userRole = "Employee\nDashboard";
-
-    // Up Next: Linking dashboard to accounts.
 
     useEffect(() => {
         const updateDate = () => {
@@ -64,60 +61,58 @@ const Navbar = ({ darkMode, setDarkMode, isOpen, setIsOpen }) => {
         };
     }, []);
 
+    // dummy data for currentUser
+    const fullName = currentUser  ? `${currentUser.firstName} ${currentUser.lastName}` : 'Guest User';
+    const userRole = 'Employee Dashboard';
+
     return (
-        <div className={`dashboard-container ${darkMode ? "dark-mode" : ""}`}>
-            <div>
-                {/* Sidebar */}
-                <div className={`nav-sidebar ${isOpen ? "open" : ""}`}>
-                    <div className="logo">
-                        <img src={Logo} alt="" />
-                        <span>EMPLOYEE <br /> DASHBOARD</span>
+        <div className={darkMode ? "dark-mode" : ""}>
+            <div className={`nav-sidebar ${isOpen ? "open" : ""}`}>
+                <div className="logo">
+                    <img src={Logo} alt="" />
+                    <span>EMPLOYEE <br /> DASHBOARD</span>
+                </div>
+                <ul className="nav-links">
+                    <li><Link to="/dashboard"><LuHouse className="icon" /><span>Home</span></Link></li>
+                    <li><Link to="/market"><BiStore className="icon" /><span>Market</span></Link></li>
+                    <li><Link to="/asf-map"><HiOutlineMap className="icon" /><span>Map</span></Link></li>
+                    <li><Link to="/notifications"><BiNotification className="icon" /><span>Notifications</span></Link></li>
+                </ul>
+            </div>
+
+            <nav className="navbar">
+                <div className="nav-left">
+                    <div className={`menu-toggle ${isOpen ? "open" : ""}`} onClick={() => setIsOpen(!isOpen)}>
+                        {isOpen ? <FiX /> : <FiMenu />}
                     </div>
-                    <ul className="nav-links">
-                        <li><Link to="/dashboard"><LuHouse className="icon" /><span>Home</span></Link></li>
-                        <li><Link to="/market"><BiStore className="icon" /><span>Market</span></Link></li>
-                        <li><Link to="/asf-map"><HiOutlineMap className="icon" /><span>Map</span></Link></li>
-                        <li><Link to="/notifications"><BiNotification className="icon" /><span>Notifications</span></Link></li>
-                    </ul>
+                    <div className="date-container">
+                        <MdOutlineCalendarToday className="calendar-icon" />
+                        <span>{currentDate}</span>
+                    </div>
                 </div>
 
-                <nav className="navbar">
-                    <div className="nav-left">
-                        <div className={`menu-toggle ${isOpen ? "open" : ""}`} onClick={() => setIsOpen(!isOpen)}>
-                            {isOpen ? <FiX /> : <FiMenu />}
-                        </div>
-
-                        <div className="date-container">
-                            <MdOutlineCalendarToday className="calendar-icon" />
-                            <span>{currentDate}</span>
-                        </div>
+                <div className="nav-right">
+                    <div className="dark-mode-toggle" onClick={() => setDarkMode(!darkMode)}>
+                        {darkMode ? <FiSun /> : <FiMoon />}
                     </div>
 
-                    <div className="nav-right">
-                        <div className="dark-mode-toggle" onClick={() => setDarkMode(!darkMode)}>
-                            {darkMode ? <FiSun /> : <FiMoon />}
+                    <div className="profile-container" ref={dropdownRef} onClick={() => setDropdownOpen(!dropdownOpen)}>
+                        <FaCircleUser  className="icon user" />
+                        <div className="profile-info">
+                            <span className="user-name">{fullName}</span>
+                            <span className="user-role">{userRole}</span>
                         </div>
 
-                        {/* Profile Section */}
-                        <div className="profile-container" ref={dropdownRef} onClick={() => setDropdownOpen(!dropdownOpen)}>
-                            <FaCircleUser className="icon user" />
-                            <div className="profile-info">
-                                <span className="user-name">{userName}</span>
-                                <span className="user-role">{userRole}</span>
+                        {dropdownOpen && (
+                            <div className="profile-dropdown">
+                                <button onClick={handleAccountSettings}><IoSettingsOutline className="dropdown-icon" /> Account Settings</button>
+                                <button onClick={handleViewOwners}><FaRegClipboard className="dropdown-icon" />View Hog Owners</button>
+                                <button onClick={handleLogout}><FiLogOut className="dropdown-icon" /> Logout</button>
                             </div>
-
-                            {/* Dropdown Menu */}
-                            {dropdownOpen && (
-                                <div className="profile-dropdown">
-                                    <button onClick={handleAccountSettings}><IoSettingsOutline className="dropdown-icon" />Account Settings</button>
-                                    <button onClick={handleViewOwners}><FaRegClipboard className="dropdown-icon" />View Hog Owners</button>
-                                    <button onClick={handleLogout}><FiLogOut className="dropdown-icon" />Logout</button>
-                                </div>
-                            )}
-                        </div>
+                        )}
                     </div>
-                </nav>
-            </div>
+                </div>
+            </nav>
         </div>
     );
 };

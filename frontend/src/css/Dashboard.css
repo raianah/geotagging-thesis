@@ -1,0 +1,84 @@
+.dashboard-container.dark-mode {
+  --background-color: #121212;
+  --text-color: white;
+}
+
+.header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.user-info span {
+  display: block;
+}
+
+.role {
+  color: #aaa;
+}
+
+.stats-section {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.stat-card {
+  background-color: var(--stat-card-bg, #e0e0e0);
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  flex: 1 1 calc(25% - 16px);
+  color: #000;
+}
+
+.stat-card span {
+  font-size: 32px;
+  font-weight: bold;
+  color: #ff6b6b;
+}
+
+.dashboard-container.dark-mode .stat-card {
+  background-color: #2d2d2d;
+  color: white;
+}
+
+.content-section {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 20px;
+  gap: 50px;
+}
+
+.map-container {
+  flex: 2;
+  min-width: 300px;
+}
+
+.map-image {
+  width: 100%;
+  border-radius: 12px;
+}
+
+.quick-access {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+button {
+  background-color: #ff6b6b;
+  border: none;
+  color: white;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+button:hover {
+  background-color: #ff4c4c;
+}

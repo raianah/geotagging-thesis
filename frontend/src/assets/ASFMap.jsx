@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { MapContainer, TileLayer, Circle, Marker, Popup } from "react-leaflet";
-import { FiAlertTriangle } from "react-icons/fi";
+import { FiAlertTriangle, FiX } from "react-icons/fi";
 import { MdLocationPin } from "react-icons/md";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -8,17 +8,35 @@ import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 import "../css/ASFMap.css";
 
-const defaultIcon = L.icon({ iconUrl: markerIcon, shadowUrl: markerShadow, iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34] });
+// Fix for default icon in Leaflet 
+const defaultIcon = L.icon({ 
+    iconUrl: markerIcon, 
+    shadowUrl: markerShadow, 
+    iconSize: [25, 41], 
+    iconAnchor: [12, 41], 
+    popupAnchor: [1, -34] 
+});
 
-const ASFMap = () => {
+// Map Preview Component
+const MapPreview = ({ onClick }) => {
+    return (
+        <div className="map-preview" onDoubleClick={onClick}>
+            <div className="map-preview-label">
+                Double-click to open
+            </div>
+        </div>
+    );
+};
+
+// Full ASF Map Component
+const ASFMapContent = () => {
     const [position, setPosition] = useState([13.9333, 120.733]); // Default: Manila
     const [hasSelected, setHasSelected] = useState(false);
     const [location, setLocation] = useState("Fetching location...");
     
     const zones = [
         { label: "Depopulation Zone", radius: 500, color: "#ff4d4d" },
-        { label: "Surveillance Zone", radius: 1000, color: "#ffd633" },
-        { label: "Monitoring Zone", radius: 1500, color: "#33cc33" }
+        { label: "Surveillance Zone", radius: 1000, color: "#ffd633" }
     ];
 
     const handleMapClick = (e) => {
@@ -67,12 +85,103 @@ const ASFMap = () => {
             <div className="map-container">
                 <MapContainer center={position} zoom={14} className="map" onClick={handleMapClick}>
                     <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap contributors" />
-                    {hasSelected && zones.map((zone, index) => <Circle key={index} center={position} radius={zone.radius} color={zone.color} fillOpacity={0.3} />)}
-                    <Marker position={position} icon={defaultIcon} draggable={true} eventHandlers={{ dragend: (e) => { setPosition([e.target.getLatLng().lat, e.target.getLatLng().lng]); setHasSelected(true); } }}>
-                        <Popup><b>ASF Outbreak Detected</b><br />📍 {position[0].toFixed(4)}, {position[1].toFixed(4)}</Popup>
+                    {hasSelected && zones.map((zone, index) => (
+                        <Circle 
+                            key={index} 
+                            center={position} 
+                            radius={zone.radius} 
+                            color={zone.color} 
+                            fillOpacity={0.3} 
+                        />
+                    ))}
+                    <Marker 
+                        position={position} 
+                        icon={defaultIcon} 
+                        draggable={true} 
+                        eventHandlers={{ 
+                            dragend: (e) => { 
+                                setPosition([e.target.getLatLng().lat, e.target.getLatLng().lng]); 
+                                setHasSelected(true); 
+                            } 
+                        }}
+                    >
+                        <Popup>
+                            <b>ASF Outbreak Detected</b><br />
+                            📍 {position[0].toFixed(4)}, {position[1].toFixed(4)}
+                        </Popup>
                     </Marker>
                 </MapContainer>
             </div>
+        </div>
+    );
+};
+
+// Modal Component
+const Modal = ({ isOpen, onClose, children }) => {
+    const modalRef = useRef(null);
+
+    useEffect(() => {
+        const handleOutsideClick = (e) => {
+            if (modalRef.current && !modalRef.current.contains(e.target)) {
+                onClose();
+            }
+        };
+
+        const handleEscapeKey = (e) => {
+            if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener('mousedown', handleOutsideClick);
+            document.addEventListener('keydown', handleEscapeKey);
+            document.body.style.overflow = 'hidden';
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleOutsideClick);
+            document.removeEventListener('keydown', handleEscapeKey);
+            document.body.style.overflow = 'auto';
+        };
+    }, [isOpen, onClose]);
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="modal-overlay">
+            <div className="modal-container" ref={modalRef}>
+                <button className="modal-close-btn" onClick={onClose}>
+                    <FiX />
+                </button>
+                <div className="modal-content">
+                    {children}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Main Component
+const ASFMap = () => {
+    const [modalOpen, setModalOpen] = useState(false);
+
+    const openModal = () => {
+        setModalOpen(true);
+    };
+
+    const closeModal = () => {
+        setModalOpen(false);
+    };
+
+    return (
+        <div className="asf-map-container">
+            <h3>ASF MAP (SHOWS OUTBREAK ZONES)</h3>
+            <MapPreview onClick={openModal} />
+            
+            <Modal isOpen={modalOpen} onClose={closeModal}>
+                <ASFMapContent />
+            </Modal>
         </div>
     );
 };
