@@ -1,21 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 
-import { BiStore, BiNotification } from "react-icons/bi"
+import { BiNotification } from "react-icons/bi";
 import { FaRegClipboard } from "react-icons/fa";
-import { FaCircleUser } from "react-icons/fa6"
-import { FiMenu, FiX, FiMoon, FiSun, FiLogOut } from "react-icons/fi";
+import { FaCircleUser } from "react-icons/fa6";
+import { FiMoon, FiSun, FiLogOut } from "react-icons/fi";
 import { IoSettingsOutline } from "react-icons/io5";
-import { MdOutlineCalendarToday } from "react-icons/md";
-import { HiOutlineMap } from "react-icons/hi"
-import { LuHouse } from "react-icons/lu"
 
 import "../css/Navbar.css";
 
 import Logo from "../img/logo.png";
 
-// Add currentUser as a prop
-const Navbar = ({ darkMode, setDarkMode, isOpen, setIsOpen, currentUser }) => {
+const Navbar = ({ darkMode, setDarkMode, currentUser }) => {
     const [currentDate, setCurrentDate] = useState("");
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
@@ -62,55 +58,49 @@ const Navbar = ({ darkMode, setDarkMode, isOpen, setIsOpen, currentUser }) => {
     }, []);
 
     // dummy data for currentUser
-    const fullName = currentUser  ? `${currentUser.firstName} ${currentUser.lastName}` : 'Guest User';
+    const fullName = currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : 'Guest User';
     const userRole = 'Employee Dashboard';
 
     return (
         <div className={darkMode ? "dark-mode" : ""}>
-            <div className={`nav-sidebar ${isOpen ? "open" : ""}`}>
-                <div className="logo">
-                    <img src={Logo} alt="" />
-                    <span>EMPLOYEE <br /> DASHBOARD</span>
-                </div>
-                <ul className="nav-links">
-                    <li><Link to="/dashboard"><LuHouse className="icon" /><span>Home</span></Link></li>
-                    <li><Link to="/market"><BiStore className="icon" /><span>Market</span></Link></li>
-                    <li><Link to="/asf-map"><HiOutlineMap className="icon" /><span>Map</span></Link></li>
-                    <li><Link to="/notifications"><BiNotification className="icon" /><span>Notifications</span></Link></li>
-                </ul>
-            </div>
-
-            <nav className="navbar">
-                <div className="nav-left">
-                    <div className={`menu-toggle ${isOpen ? "open" : ""}`} onClick={() => setIsOpen(!isOpen)}>
-                        {isOpen ? <FiX /> : <FiMenu />}
-                    </div>
-                    <div className="date-container">
-                        <MdOutlineCalendarToday className="calendar-icon" />
-                        <span>{currentDate}</span>
-                    </div>
+            <nav className="navbar unified-navbar">
+                {/* Left section with brand */}
+                <Link to="/dashboard" className="brand-section">
+                    <img src={Logo} alt="Logo" className="navbar-logo" />
+                    <span className="brand-text">EMPLOYEE<br />DASHBOARD</span>
+                </Link>
+                
+                {/* Center section with date */}
+                <div className="date-section">
+                    <span className="date-display">{currentDate}</span>
                 </div>
 
-                <div className="nav-right">
-                    <div className="dark-mode-toggle" onClick={() => setDarkMode(!darkMode)}>
+                {/* Right section with controls */}
+                <div className="user-controls">
+                    <div className="dark-mode-toggle" onClick={() => setDarkMode(!darkMode)} title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}>
                         {darkMode ? <FiSun /> : <FiMoon />}
                     </div>
-
+                    
                     <div className="profile-container" ref={dropdownRef} onClick={() => setDropdownOpen(!dropdownOpen)}>
-                        <FaCircleUser  className="icon user" />
-                        <div className="profile-info">
-                            <span className="user-name">{fullName}</span>
-                            <span className="user-role">{userRole}</span>
-                        </div>
-
+                        <FaCircleUser className="profile-icon" />
+                        
                         {dropdownOpen && (
                             <div className="profile-dropdown">
+                                <div className="profile-header">
+                                    <span className="dropdown-user-name">{fullName}</span>
+                                    <span className="dropdown-user-role">{userRole}</span>
+                                </div>
+                                <div className="dropdown-divider"></div>
                                 <button onClick={handleAccountSettings}><IoSettingsOutline className="dropdown-icon" /> Account Settings</button>
                                 <button onClick={handleViewOwners}><FaRegClipboard className="dropdown-icon" />View Hog Owners</button>
                                 <button onClick={handleLogout}><FiLogOut className="dropdown-icon" /> Logout</button>
                             </div>
                         )}
                     </div>
+                    
+                    <Link to="/notifications" className="notification-link" title="Notifications">
+                        <BiNotification className="notification-icon" />
+                    </Link>
                 </div>
             </nav>
         </div>

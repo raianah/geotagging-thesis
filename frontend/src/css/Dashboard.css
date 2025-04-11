@@ -31,6 +31,13 @@
   text-align: center;
   flex: 1 1 calc(25% - 16px);
   color: #000;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
 }
 
 .stat-card span {
@@ -81,4 +88,238 @@ button {
 
 button:hover {
   background-color: #ff4c4c;
+}
+
+/* Original Modal Styles (for map) */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+/* Graph Modal Styles */
+.graph-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.graph-modal-content {
+  width: 75%;
+  height: 75%;
+  background: linear-gradient(135deg, #1e1e2f, #2a2a3d);
+  border-radius: 8px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  position: relative;
+  overflow: hidden;
+  animation: modalFadeIn 0.3s ease-out;
+  border: 1px solid #444;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.graph-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #444;
+}
+
+.graph-modal-header h2 {
+  color: white;
+  margin: 0;
+  transition: opacity 0.2s ease;
+}
+
+.graph-modal-body {
+  flex: 1;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s ease;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #ccc;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 5px 10px;
+}
+
+.close-btn:hover {
+  color: white;
+  background-color: transparent;
+}
+
+.custom-tooltip {
+  background-color: rgba(30, 30, 47, 0.9);
+  border: 1px solid #444;
+  padding: 0.5rem;
+  border-radius: 4px;
+  color: white;
+}
+
+/* Graph Navigation */
+.graph-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.nav-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.nav-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.nav-btn:active {
+  transform: scale(0.95);
+}
+
+.graph-indicators {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.indicator:hover {
+  transform: scale(1.2);
+}
+
+.indicator.active {
+  background-color: rgba(255, 255, 255, 0.8);
+  width: 12px;
+  height: 12px;
+}
+
+/* Animations for graph transitions */
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes modalFadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+@keyframes slideLeft {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  51% {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  51% {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.fade-in {
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+.fade-out {
+  animation: modalFadeOut 0.3s ease-out;
+}
+
+.slide-left .graph-modal-header h2,
+.slide-left .graph-modal-body {
+  animation: slideLeft 0.4s ease-in-out;
+}
+
+.slide-right .graph-modal-header h2,
+.slide-right .graph-modal-body {
+  animation: slideRight 0.4s ease-in-out;
+}
+
+/* Add a subtle glow effect to active modal */
+.graph-modal-content {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  transition: box-shadow 0.3s ease;
+}
+
+.graph-modal-content:hover {
+  box-shadow: 0 8px 30px rgba(255, 255, 255, 0.1);
 }
