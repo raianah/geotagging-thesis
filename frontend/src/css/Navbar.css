@@ -132,6 +132,20 @@
     color: var(--icon-color);
 }
 
+.profile-initials {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background-color: var(--link-active);
+    color: var(--navbar-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
 .profile-dropdown {
     position: absolute;
     top: calc(100% + 0.75rem);
@@ -214,6 +228,110 @@
     color: var(--icon-color);
 }
 
+.notification-container {
+    position: relative;
+  }
+  
+  .notification-wrapper {
+    position: relative;
+    cursor: pointer;
+  }
+  
+  .notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: #f44336;
+    color: white;
+    font-size: 10px;
+    min-width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+  }
+  
+  .notifications-dropdown {
+    position: absolute;
+    top: 40px;
+    right: 0;
+    width: 320px;
+    max-height: 400px;
+    background-color: var(--navbar-bg);
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    z-index: 100;
+    overflow: hidden;
+    animation: fadeIn 0.2s ease;
+  }
+  
+  .notifications-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+  }
+  
+  .notifications-header h3 {
+    margin: 0;
+    font-size: 1rem;
+  }
+  
+  .unread-count {
+    font-size: 0.75rem;
+    color: #f44336;
+    font-weight: 500;
+  }
+  
+  .notifications-list {
+    max-height: 350px;
+    overflow-y: auto;
+  }
+  
+  .notification-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--dropdown-divider);
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .notification-item:hover {
+    background-color: var(--link-hover);
+  }
+  
+  .notification-item.unread {
+    border-left: 3px solid #f44336;
+    background-color: rgba(244, 67, 54, 0.05);
+  }
+  
+  .notification-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+  }
+  
+  .notification-preview {
+    font-size: 0.8rem;
+    color: var(--navbar-text);
+    opacity: 0.8;
+    margin-bottom: 4px;
+  }
+  
+  .notification-date {
+    font-size: 0.75rem;
+    color: var(--navbar-text);
+    opacity: 0.7;
+  }
+  
+  .no-notifications {
+    padding: 20px;
+    text-align: center;
+    color: var(--navbar-text);
+    opacity: 0.7;
+  }
+
 /* Dashboard container adjustment */
 .dashboard-container {
     position: absolute;
@@ -228,6 +346,29 @@
     padding: 20px;
     box-sizing: border-box;
     z-index: 1;
+}
+
+.profile-pic-small {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--navbar-text);
+}
+
+/* Ensure the dropdown styling works well with profile images */
+.profile-dropdown {
+    position: absolute;
+    top: calc(100% + 0.75rem);
+    right: -0.5rem;
+    background: var(--navbar-bg);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    width: 14rem;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    z-index: 1002;
 }
 
 /* Responsive adjustments */

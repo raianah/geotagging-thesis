@@ -5,7 +5,8 @@ import LoginForm from "./assets/Login";
 import ASFMap from "./assets/ASFMap";
 import SPM from "./assets/SPM";
 import MapFixer from "./assets/MapFixer";
-import Dashboard from "./assets/Dashboard";
+import EmployeeDashboard from "./assets/EmployeeDashboard";
+import UserDashboard from "./assets/UserDashboard";
 
 const App = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -79,7 +80,8 @@ const App = () => {
     return (
         // Dashboard development for now. Uncomment the whole code for whole testing and remove this.
         <Router>
-            <Dashboard darkMode={darkMode} setDarkMode={setDarkMode}/>
+            {/* <EmployeeDashboard darkMode={darkMode} setDarkMode={setDarkMode}/> */}
+            <UserDashboard darkMode={darkMode} setDarkMode={setDarkMode} />
         </Router>
 
 
@@ -93,7 +95,7 @@ const App = () => {
                     
         //             <Route path="/" element={
         //                 <ProtectedRoute>
-        //                     <Dashboard 
+        //                     <EmployeeDashboard 
         //                         darkMode={darkMode} 
         //                         setDarkMode={setDarkMode} 
         //                         isOpen={isOpen} 

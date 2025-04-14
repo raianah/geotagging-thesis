@@ -4,9 +4,9 @@ import ASFMap from "./ASFMap";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import "../css/Navbar.css";
-import "../css/Dashboard.css";
+import "../css/EmployeeDashboard.css";
 
-const Dashboard = ({ darkMode, setDarkMode }) => {
+const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
     const [showGraphModal, setShowGraphModal] = useState(false);
     const [selectedStat, setSelectedStat] = useState(null);
     const [animationDirection, setAnimationDirection] = useState(null);
@@ -232,4 +232,4 @@ const Dashboard = ({ darkMode, setDarkMode }) => {
     );
 };
 
-export default Dashboard;
+export default EmployeeDashboard;
