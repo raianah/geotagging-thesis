@@ -13,7 +13,7 @@ import NotificationDetail from "./Notifications";
 
 import Logo from "../img/logo.png";
 
-const Navbar = ({ darkMode, setDarkMode, currentUser }) => {
+const Navbar = ({ darkMode, setDarkMode, currentUser, isHomePage = false }) => {
     const [currentDate, setCurrentDate] = useState("");
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [accountModalOpen, setAccountModalOpen] = useState(false);
@@ -123,9 +123,22 @@ const Navbar = ({ darkMode, setDarkMode, currentUser }) => {
         <div className={darkMode ? "dark-mode" : ""}>
             <nav className="navbar unified-navbar">
                 {/* Left section with brand */}
-                <Link to="/dashboard" className="brand-section">
+                <Link to={isHomePage ? "/" : "/dashboard"} className="brand-section">
                     <img src={Logo} alt="Logo" className="navbar-logo" />
-                    <span className="brand-text">EMPLOYEE<br />DASHBOARD</span>
+                    <div className="brand-text">
+                        {isHomePage ? (
+                            <>
+                            <span className="govt-text-small text-center">Republic of the Philippines</span>
+                            <hr className="govt-text-divider" />
+                            <span className="govt-text-normal text-center">Municipality of Balayan</span>
+                            <span className="govt-text-normal text-center">Hog Registry</span>
+                            </>
+                        ) : (
+                            <>
+                            EMPLOYEE<br />DASHBOARD
+                            </>
+                        )}
+                    </div>
                 </Link>
                 
                 {/* Center section with date */}
@@ -138,63 +151,73 @@ const Navbar = ({ darkMode, setDarkMode, currentUser }) => {
                     <div className="dark-mode-toggle" onClick={() => setDarkMode(!darkMode)} title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}>
                         {darkMode ? <FiSun /> : <FiMoon />}
                     </div>
-                    
-                    <div className="profile-container" ref={dropdownRef} onClick={() => setDropdownOpen(!dropdownOpen)}>
-                        {userData.profilePicture ? (
-                            <img src={userData.profilePicture} alt="Profile" className="profile-pic-small" />
-                        ) : (
-                            <div className="profile-initials">
-                                {userData.firstName.charAt(0)}{userData.lastName.charAt(0)}
-                            </div>
-                        )}
-                        
-                        {dropdownOpen && (
-                            <div className="profile-dropdown">
-                                <div className="profile-header">
-                                    <span className="dropdown-user-name">{fullName}</span>
-                                    <span className="dropdown-user-role">{userRole}</span>
-                                </div>
-                                <div className="dropdown-divider"></div>
-                                <button onClick={handleAccountSettings}><IoSettingsOutline className="dropdown-icon" /> Account Settings</button>
-                                <button onClick={handleViewOwners}><FaRegClipboard className="dropdown-icon" />View Hog Owners</button>
-                                <button onClick={handleLogout}><FiLogOut className="dropdown-icon" /> Logout</button>
-                            </div>
-                        )}
-                    </div>
-                    
-                    <div className="notification-container" ref={notificationRef}>
-                        <div className="notification-wrapper" onClick={toggleNotifications} title="Notifications">
-                            <BiNotification className="notification-icon" />
-                            {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+
+                    {isHomePage ? (
+                        <div className="home-auth-buttons">
+                            <Link to="/login" className="btn-login">Login</Link>
+                            <Link to="/register" className="btn-register-nav">Register</Link>
                         </div>
-                        
-                        {notificationsOpen && (
-                            <div className="notifications-dropdown">
-                                <div className="notifications-header">
-                                    <h3>Notifications</h3>
-                                    {unreadCount > 0 && <span className="unread-count">{unreadCount} unread</span>}
+                    ) : (
+                        <div className="profile-container" ref={dropdownRef} onClick={() => setDropdownOpen(!dropdownOpen)}>
+                            {userData.profilePicture ? (
+                                <img src={userData.profilePicture} alt="Profile" className="profile-pic-small" />
+                            ) : (
+                                <div className="profile-initials">
+                                    {userData.firstName.charAt(0)}{userData.lastName.charAt(0)}
                                 </div>
-                                <div className="dropdown-divider"></div>
-                                {notifications.length > 0 ? (
-                                    <div className="notifications-list">
-                                        {notifications.map(notification => (
-                                            <div 
-                                                key={notification.id} 
-                                                className={`notification-item ${!notification.read ? 'unread' : ''}`}
-                                                onClick={() => handleNotificationClick(notification)}
-                                            >
-                                                <div className="notification-title">{notification.title}</div>
-                                                <div className="notification-preview">{notification.message.substring(0, 50)}...</div>
-                                                <div className="notification-date">{notification.date}</div>
-                                            </div>
-                                        ))}
+                            )}
+                            
+                            {dropdownOpen && (
+                                <div className="profile-dropdown">
+                                    <div className="profile-header">
+                                        <span className="dropdown-user-name">{fullName}</span>
+                                        <span className="dropdown-user-role">{userRole}</span>
                                     </div>
-                                ) : (
-                                    <div className="no-notifications">No notifications</div>
-                                )}
+                                    <div className="dropdown-divider"></div>
+                                    <button onClick={handleAccountSettings}><IoSettingsOutline className="dropdown-icon" /> Account Settings</button>
+                                    <button onClick={handleViewOwners}><FaRegClipboard className="dropdown-icon" />View Hog Owners</button>
+                                    <button onClick={handleLogout}><FiLogOut className="dropdown-icon" /> Logout</button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {!isHomePage && (
+                        <div className="notification-container" ref={notificationRef}>
+                            <div className="notification-wrapper" onClick={toggleNotifications} title="Notifications">
+                                <BiNotification className="notification-icon" />
+                                {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
                             </div>
-                        )}
-                    </div>
+                            
+                            {notificationsOpen && (
+                                <div className="notifications-dropdown">
+                                    <div className="notifications-header">
+                                        <h3>Notifications</h3>
+                                        {unreadCount > 0 && <span className="unread-count">{unreadCount} unread</span>}
+                                    </div>
+                                    <div className="dropdown-divider"></div>
+                                    {notifications.length > 0 ? (
+                                        <div className="notifications-list">
+                                            {notifications.map(notification => (
+                                                <div 
+                                                    key={notification.id} 
+                                                    className={`notification-item ${!notification.read ? 'unread' : ''}`}
+                                                    onClick={() => handleNotificationClick(notification)}
+                                                >
+                                                    <div className="notification-title">{notification.title}</div>
+                                                    <div className="notification-preview">{notification.message.substring(0, 50)}...</div>
+                                                    <div className="notification-date">{notification.date}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="no-notifications">No notifications</div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    
                 </div>
             </nav>
 

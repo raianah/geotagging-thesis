@@ -7,6 +7,8 @@ import SPM from "./assets/SPM";
 import MapFixer from "./assets/MapFixer";
 import EmployeeDashboard from "./assets/EmployeeDashboard";
 import UserDashboard from "./assets/UserDashboard";
+import PrivacyPolicy from "./assets/PrivacyPolicy";
+import HomePage from "./assets/HomePage";
 
 const App = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -80,15 +82,17 @@ const App = () => {
     return (
         // Dashboard development for now. Uncomment the whole code for whole testing and remove this.
         <Router>
-            {/* <EmployeeDashboard darkMode={darkMode} setDarkMode={setDarkMode}/> */}
-            <UserDashboard darkMode={darkMode} setDarkMode={setDarkMode} />
+            <EmployeeDashboard darkMode={darkMode} setDarkMode={setDarkMode}/>
+            {/* <UserDashboard darkMode={darkMode} setDarkMode={setDarkMode} /> */}
         </Router>
 
 
         // <Router>
         //     <div className={darkMode ? "dark-mode" : ""}>
         //         <Routes>
+        //             <Route path="/" element={<HomePage darkMode={darkMode} setDarkMode={setDarkMode} />} />
         //             <Route path="/register" element={<RegistrationForm />} />
+        //             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         //             <Route path="/login" element={
         //                 <LoginForm setIsAuthenticated={setIsAuthenticated} handleLogin={handleLogin} />
         //             } />
