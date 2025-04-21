@@ -1,6 +1,6 @@
-/* UserDashboard.css - Improved Version */
+/* UserDashboard.css */
 :root {
-    --primary-color: #ff6b6b;  /* Changed to match EmployeeDashboard */
+    --primary-color: #ff6b6b;
     --primary-light: #ff8585;
     --primary-dark: #ff4c4c;
     --primary-very-dark: #e63e3e;
@@ -17,89 +17,89 @@
     --danger-color: #e74c3c;
     --shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     --stat-card-bg: #e0e0e0;
-  }
-  
-  .dark-mode {
+}
+
+.dark-mode {
     --text-color: #f0f0f0;
     --text-light: #cccccc;
     --text-dark: #ffffff;
-    --background-color: #121212;  /* Darker background from EmployeeDashboard */
-    --card-background: #2d2d2d;   /* Darker card background from EmployeeDashboard */
+    --background-color: #121212;
+    --card-background: #2d2d2d;
     --border-color: #444444;
     --shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
     --stat-card-bg: #1d1d1d;
-  }
-  
-  .dashboard-wrapper {
+}
+
+.dashboard-wrapper {
     min-height: calc(100vh - 4.5rem);
     background-color: var(--background-color);
     color: var(--text-color);
     font-family: 'Inter', sans-serif;
     padding-top: 4.5rem;
     transition: background-color 0.3s ease, color 0.3s ease;
-  }
-  
-  .user-dashboard-container {
+}
+
+.user-dashboard-container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
-  }
-  
-  .header-bar {
+}
+
+.header-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
-  }
-  
-  .user-dashboard-container h1 {
+}
+
+.user-dashboard-container h1 {
     margin-bottom: 24px;
     font-size: 28px;
     font-weight: 600;
     color: var(--primary-color);
     transition: color 0.3s ease;
-  }
-  
-  .dashboard-content {
+}
+
+.dashboard-content {
     display: flex;
     flex-direction: column;
     gap: 20px;
-  }
-  
-  /* Card Styles with improved animations */
-  .account-status-card,
-  .add-branch-card,
-  .news-feed-card {
+}
+
+/* Card Styles with improved animations */
+.account-status-card,
+.add-branch-card,
+.news-feed-card {
     background-color: var(--card-background);
     border-radius: 12px;
     box-shadow: var(--shadow);
     padding: 20px;
     transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease;
-  }
-  
-  .account-status-card:hover,
-  .add-branch-card:hover,
-  .news-feed-card:hover {
+}
+
+.account-status-card:hover,
+.add-branch-card:hover,
+.news-feed-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-  }
-  
-  .card-header {
+}
+
+.card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 16px;
-  }
-  
-  .card-header h2 {
+}
+
+.card-header h2 {
     font-size: 20px;
     font-weight: 600;
     color: var(--primary-color);
     margin: 0;
     transition: color 0.3s ease;
-  }
-  
-  .status-badge {
+}
+
+.status-badge {
     padding: 4px 12px;
     border-radius: 20px;
     font-size: 14px;
@@ -107,57 +107,57 @@
     color: white;
     background-color: var(--primary-color);
     transition: background-color 0.3s ease;
-  }
-  
-  .status-badge.active {
+}
+
+.status-badge.active {
     background-color: var(--success-color);
-  }
-  
-  .status-badge.pending {
+}
+
+.status-badge.pending {
     background-color: var(--warning-color);
-  }
-  
-  .status-badge.inactive {
+}
+
+.status-badge.inactive {
     background-color: var(--text-light);
-  }
-  
-  .account-info {
+}
+
+.account-info {
     display: flex;
     flex-direction: column;
     gap: 12px;
     margin-bottom: 20px;
-  }
-  
-  .info-row {
+}
+
+.info-row {
     display: flex;
     justify-content: space-between;
     padding: 8px 0;
     border-bottom: 1px solid var(--border-color);
     transition: border-color 0.3s ease;
-  }
-  
-  .info-row:last-child {
+}
+
+.info-row:last-child {
     border-bottom: none;
-  }
-  
-  .info-label {
+}
+
+.info-label {
     font-weight: 500;
     color: var(--text-light);
     transition: color 0.3s ease;
-  }
-  
-  .info-value {
+}
+
+.info-value {
     font-weight: 600;
     color: var(--text-dark);
-    transition: color 0.3s ease;
-  }
-  
-  .account-actions {
+    transition: color  0.3s ease;
+}
+
+.account-actions {
     display: flex;
     gap: 10px;
-  }
-  
-  .action-button {
+}
+
+.action-button {
     flex: 1;
     padding: 12px;
     background-color: var(--primary-light);
@@ -168,26 +168,26 @@
     font-weight: 500;
     cursor: pointer;
     transition: background-color 0.2s ease, transform 0.1s ease;
-  }
-  
-  .action-button:hover {
+}
+
+.action-button:hover {
     background-color: var(--primary-color);
     transform: translateY(-2px);
-  }
-  
-  .action-button:active {
+}
+
+.action-button:active {
     transform: translateY(1px);
-  }
-  
-  /* Stats Section - Adapted from EmployeeDashboard */
-  .farms-summary {
+}
+
+/* Stats Section - Adapted from EmployeeDashboard */
+.farms-summary {
     display: flex;
     gap: 16px;
     flex-wrap: wrap;
     margin-bottom: 20px;
-  }
-  
-  .farm-card {
+}
+
+.farm-card {
     background-color: var(--stat-card-bg);
     padding: 20px;
     border-radius: 12px;
@@ -196,24 +196,24 @@
     color: var(--text-dark);
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease;
-  }
-  
-  .farm-card:hover {
+}
+
+.farm-card:hover {
     transform: scale(1.05);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-  }
-  
-  .farm-card span {
+}
+
+.farm-card span {
     font-size: 24px;
     font-weight: bold;
     color: var(--primary-color);
     display: block;
     margin-bottom: 8px;
     transition: color 0.3s ease;
-  }
-  
-  /* Add Branch Button with improved styling */
-  .add-branch-btn {
+}
+
+/* Add Branch Button with improved styling */
+.add-branch-btn {
     background-color: var(--primary-color);
     color: white;
     border: none;
@@ -227,20 +227,20 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-  }
-  
-  .add-branch-btn:hover {
+}
+
+.add-branch-btn:hover {
     background-color: var(--primary-dark);
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  }
-  
-  .add-branch-btn:active {
+}
+
+.add-branch-btn:active {
     transform: translateY(1px);
-  }
-  
-  /* News Feed Card */
-  .refresh-btn {
+}
+
+/* News Feed Card */
+.refresh-btn {
     background: transparent;
     border: none;
     color: var(--primary-color);
@@ -251,53 +251,52 @@
     align-items: center;
     justify-content: center;
     transition: background-color 0.2s ease, transform 0.2s ease;
-  }
-  
-  .refresh-btn:hover {
+}
+
+.refresh-btn:hover {
     background-color: var(--primary-very-light);
     transform: rotate(30deg);
-  }
-  
-  .spinning {
+}
+
+.spinning {
     animation: spin 1.5s linear infinite;
-  }
-  
-  @keyframes spin {
+}
+
+@keyframes spin {
     100% { transform: rotate(360deg); }
-  }
-  
-  .loading-indicator {
+}
+
+.loading-indicator {
     text-align: center;
     padding: 20px;
     color: var(--text-light);
     font-style: italic;
-  }
-  
-  .news-list {
+}
+
+.news-list {
     display: flex;
     flex-direction: column;
     gap: 16px;
-  }
-  
-  .news-item {
+}
+
+.news-item {
     border-bottom: 1px solid var(--border-color);
-    /* padding-bottom: 10px 16px; */
     padding: 10px 16px;
-  }
-  
-  .news-item:hover {
+}
+
+.news-item:hover {
     background-color: rgba(0, 0, 0, 0.03);
-  }
-  
-  .dark-mode .news-item:hover {
+}
+
+.dark-mode .news-item:hover {
     background-color: rgba(255, 255, 255, 0.05);
-  }
-  
-  .news-header {
+}
+
+.news-header {
     margin-bottom: 10px;
-  }
-  
-  .urgent-tag {
+}
+
+.urgent-tag {
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -308,37 +307,37 @@
     font-size: 12px;
     font-weight: 500;
     margin-bottom: 8px;
-  }
-  
-  .news-title {
+}
+
+.news-title {
     font-size: 16px;
     font-weight: 600;
     margin: 0 0 8px 0;
     color: var(--text-dark);
     transition: color 0.3s ease;
-  }
-  
-  .news-meta {
+}
+
+.news-meta {
     font-size: 12px;
     color: var(--text-light);
     display: flex;
     gap: 16px;
     transition: color 0.3s ease;
-  }
-  
-  .news-summary {
+}
+
+.news-summary {
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 1 .5;
     margin-bottom: 12px;
-  }
-  
-  .news-actions {
+}
+
+.news-actions {
     display: flex;
     justify-content: space-between;
     align-items: center;
-  }
-  
-  .expand-btn {
+}
+
+.expand-btn {
     background: transparent;
     border: none;
     color: var(--primary-color);
@@ -349,14 +348,14 @@
     align-items: center;
     gap: 4px;
     transition: color 0.2s ease;
-  }
-  
-  .expand-btn:hover {
+}
+
+.expand-btn:hover {
     color: var(--primary-dark);
     text-decoration: underline;
-  }
-  
-  .external-link {
+}
+
+.external-link {
     font-size: 12px;
     color: var(--primary-color);
     text-decoration: none;
@@ -364,15 +363,15 @@
     align-items: center;
     gap: 4px;
     transition: color 0.2s ease;
-  }
-  
-  .external-link:hover {
+}
+
+.external-link:hover {
     color: var(--primary-dark);
     text-decoration: underline;
-  }
-  
-  /* Enhanced Modal Styles */
-  .modal-overlay {
+}
+
+/* Enhanced Modal Styles */
+.modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -384,14 +383,14 @@
     justify-content: center;
     z-index: 2000;
     animation: fadeIn 0.3s ease;
-  }
-  
-  @keyframes fadeIn {
+}
+
+@keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
-  }
-  
-  .modal-content {
+}
+
+.modal-content {
     background-color: var(--card-background);
     border-radius: 12px;
     width: 100%;
@@ -402,35 +401,35 @@
     position: relative;
     animation: modalSlideIn 0.3s ease;
     border: 1px solid var(--border-color);
-  }
-  
-  @keyframes modalSlideIn {
+}
+
+@keyframes modalSlideIn {
     from {
-      opacity: 0;
-      transform: translateY(-20px);
+        opacity: 0;
+        transform: translateY(-20px);
     }
     to {
-      opacity: 1;
-      transform: translateY(0);
+        opacity: 1;
+        transform: translateY(0);
     }
-  }
-  
-  .modal-header {
+}
+
+.modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 20px;
     border-bottom: 1px solid var(--border-color);
-  }
-  
-  .modal-header h2 {
+}
+
+.modal-header h2 {
     font-size: 20px;
     font-weight: 600;
     color: var(--primary-color);
     margin: 0;
-  }
-  
-  .close-btn {
+}
+
+.close-btn {
     background: none;
     border: none;
     color: #ccc;
@@ -438,30 +437,30 @@
     cursor: pointer;
     padding: 5px 10px;
     transition: color 0.2s ease, transform 0.2s ease;
-  }
-  
-  .close-btn:hover {
+}
+
+.close-btn:hover {
     color: var(--primary-color);
     transform: rotate(90deg);
-  }
-  
-  form {
+}
+
+form {
     padding: 20px;
-  }
-  
-  .form-group {
+}
+
+.form-group {
     margin-bottom: 16px;
-  }
-  
-  label {
+}
+
+label {
     display: block;
     margin-bottom: 8px;
     font-weight: 500;
     color: var(--text-dark);
     transition: color 0.3s ease;
-  }
-  
-  input, select {
+}
+
+input, select {
     width: 100%;
     padding: 12px;
     border: 1px solid var(--border-color);
@@ -470,84 +469,84 @@
     background-color: var(--card-background);
     color: var(--text-color);
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  }
-  
-  input:focus, select:focus {
+}
+
+input:focus, select:focus {
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.2);
-  }
-  
-  .form-actions {
+}
+
+.form-actions {
     display: flex;
     justify-content: flex-end;
     gap: 12px;
     margin-top: 20px;
-  }
-  
-  .cancel-btn, .submit-btn {
+}
+
+.cancel-btn, .submit-btn {
     padding: 12px 24px;
     border-radius: 8px;
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
-  }
-  
-  .cancel-btn {
+}
+
+.cancel-btn {
     background-color: transparent;
     border: 1px solid var(--border-color);
     color: var(--text-color);
-  }
-  
-  .cancel-btn:hover {
+}
+
+.cancel-btn:hover {
     background-color: var(--border-color);
     transform: translateY(-2px);
-  }
-  
-  .submit-btn {
+}
+
+.submit-btn {
     background-color: var(--primary-color);
     border: none;
     color: white;
-  }
-  
-  .submit-btn:hover {
+}
+
+.submit-btn:hover {
     background-color: var(--primary-dark);
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  }
-  
-  .submit-btn:active, .cancel-btn:active {
+    box-shadow:  0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.submit-btn:active, .cancel-btn:active {
     transform: translateY(1px);
-  }
-  
-  /* Responsive Design */
-  @media (min-width: 768px) {
+}
+
+/* Responsive Design */
+@media (min-width: 768px) {
     .dashboard-content {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
     }
-    
+
     .news-feed-card {
-      grid-column: 1 / -1;
+        grid-column: 1 / -1;
     }
-  }
-  
-  @media (max-width: 767px) {
+}
+
+@media (max-width: 767px) {
     .dashboard-content {
-      gap: 16px;
+        gap: 16px;
     }
-    
+
     .farm-card {
-      flex: 1 1 100%;
+        flex: 1 1 100%;
     }
-    
+
     .account-actions {
-      flex-direction: column;
+        flex-direction: column;
     }
-    
+
     .action-button {
-      width: 100%;
+        width: 100%;
     }
-  }
+}

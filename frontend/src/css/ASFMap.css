@@ -1,12 +1,16 @@
-.map-wrapper {
+/* Main wrapper */
+.asf-map-wrapper {
     display: flex;
     width: 100%;
     height: 100%;
     overflow: hidden;
+    position: relative;
 }
 
-.sidebar {
+/* Sidebar styles */
+.asf-sidebar {
     width: 300px;
+    min-width: 300px; /* Prevent shrinking */
     height: 100%;
     background: #222;
     color: white;
@@ -17,9 +21,25 @@
     justify-content: flex-start;
     position: relative;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+    overflow-y: auto; /* Make sidebar scrollable */
+    z-index: 10;
 }
 
-.title {
+/* Scrollbar styles for webkit browsers */
+.asf-sidebar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.asf-sidebar::-webkit-scrollbar-track {
+    background: #333;
+}
+
+.asf-sidebar::-webkit-scrollbar-thumb {
+    background-color: #666;
+    border-radius: 4px;
+}
+
+.asf-title {
     font-size: 18px;
     font-weight: bold;
     text-align: center;
@@ -27,7 +47,7 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.section {
+.asf-section {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -36,16 +56,16 @@
     font-weight: bold;
 }
 
-.icon {
+.asf-icon {
     font-size: 20px;
     color: #ffcc00;
 }
 
-.sectionText {
+.asf-section-text {
     color: #ddd;
 }
 
-.coordBox {
+.asf-coord-box {
     background-color: #333;
     padding: 10px;
     border-radius: 5px;
@@ -53,14 +73,16 @@
     margin-top: 10px;
 }
 
-.zoneList {
+.asf-zone-list {
     margin-top: 15px;
     display: flex;
     flex-direction: column;
     gap: 10px;
+    margin-bottom: 20px;
+    padding-bottom: 20px; /* Add padding at bottom for better scrolling */
 }
 
-.zoneItem {
+.asf-zone-item {
     padding: 10px;
     border-radius: 5px;
     font-size: 14px;
@@ -71,42 +93,88 @@
     font-weight: bold;
 }
 
-.zoneIcon {
+.asf-zone-header {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    cursor: pointer;
+    padding-bottom: 5px;
+}
+
+.asf-owners-count {
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.asf-dropdown-icon {
+    margin-left: 5px;
+}
+
+.asf-zone-icon {
     margin-right: 8px;
     font-size: 18px;
 }
 
-.coords {
+.asf-coords {
     font-size: 12px;
     color: #111;
     font-weight: normal;
     margin-top: 5px;
 }
 
-/* Map */
-.map-container {
-    flex-grow: 1;
-    height: 100%;
-    overflow: hidden;
-}
-
-.map {
-    height: 100%;
+.asf-affected-owners-list {
+    margin-top: 10px;
     width: 100%;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 5px;
 }
 
+.asf-owner-item {
+    padding: 8px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    font-size: 12px;
+}
+
+.asf-owner-item:last-child {
+    border-bottom: none;
+}
+
+.asf-owner-coords {
+    font-size: 11px;
+    opacity: 0.8;
+    margin-top: 3px;
+}
+
+/* Map container */
 .asf-map-container {
+    flex: 1;
+    height: 100%;
+    position: relative;
+}
+
+.asf-leaflet-map {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 100% !important;
+    width: 100% !important;
+}
+
+.asf-app-container {
     flex: 1;
     min-width: 300px;
     border-radius: 8px;
     overflow: hidden;
-  }
+}
 
-.map-preview {
+.asf-map-preview {
     width: 100%;
     height: 250px;
     background-color: #222;
-    background-image: url("data:image/svg+xml,%3Csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='smallGrid' width='8' height='8' patternUnits='userSpaceOnUse'%3E%3Cpath d='M 8 0 L 0 0 0 8' fill='none' stroke='%23333' stroke-width='0.5'/%3E%3C/pattern%3E%3Cpattern id='grid' width='80' height='80' patternUnits='userSpaceOnUse'%3E%3Crect width='80' height='80' fill='url(%23smallGrid)'/%3E%3Cpath d='M 80 0 L 0 0 0 80' fill='none' stroke='%23444' stroke-width='1'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23grid)' /%3E%3C/svg%3E");
     border-radius: 8px;
     position: relative;
     cursor: pointer;
@@ -118,12 +186,12 @@
     border: 1px solid #333;
 }
 
-.map-preview:hover {
+.asf-map-preview:hover {
     transform: scale(1.01);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
-.map-preview::before {
+.asf-map-preview::before {
     content: '';
     position: absolute;
     top: 0;
@@ -134,7 +202,7 @@
     z-index: 1;
 }
 
-.map-preview-label {
+.asf-map-preview-label {
     padding: 12px 25px;
     background-color: rgba(0, 0, 0, 0.8);
     color: white;
@@ -142,12 +210,10 @@
     font-weight: bold;
     z-index: 2;
     font-size: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
 /* Modal Styles */
-.modal-overlay {
+.asf-modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -160,7 +226,7 @@
     z-index: 2000;
 }
 
-.modal-container {
+.asf-modal-container {
     width: 75%;
     height: 75%;
     background-color: #1a1a1a;
@@ -168,17 +234,15 @@
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
     position: relative;
     overflow: hidden;
-    animation: modalFadeIn 0.3s ease-out;
-    border: 1px solid #444;
+    animation: asfModalFadeIn 0.3s ease-out;
 }
 
-.modal-close-btn {
+.asf-modal-close-btn {
     position: absolute;
     top: 15px;
     right: 15px;
     background: rgba(0, 0, 0, 0.7);
     color: white;
-    border: none;
     border-radius: 50%;
     width: 40px;
     height: 40px;
@@ -189,20 +253,19 @@
     z-index: 3000;
     font-size: 22px;
     transition: all 0.2s ease;
-    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.modal-close-btn:hover {
+.asf-modal-close-btn:hover {
     background: rgba(255, 0, 0, 0.7);
     transform: scale(1.1);
 }
 
-.modal-content {
+.asf-modal-content {
     width: 100%;
     height: 100%;
 }
 
-@keyframes modalFadeIn {
+@keyframes asfModalFadeIn {
     from {
         opacity: 0;
         transform: scale(0.9);
@@ -213,7 +276,18 @@
     }
 }
 
-.modal-content .map-wrapper {
-    height: 100%;
-    width: 100%;
+/* Fix leaflet container to fill its parent */
+.leaflet-container {
+    height: 100% !important;  
+    width: 100% !important;
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+/* Ensure map properly positioned */
+.leaflet-pane {
+    z-index: 5;
 }

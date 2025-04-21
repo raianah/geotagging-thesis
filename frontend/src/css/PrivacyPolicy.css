@@ -94,37 +94,6 @@
     background-color: #ff5252;
 }
 
-/* CSS for the checkbox in the registration form */
-.privacy-checkbox-container {
-    margin: 20px 0;
-}
-
-.checkbox-wrapper {
-    display: flex;
-    align-items: flex-start;
-}
-
-.checkbox-wrapper input[type="checkbox"] {
-    margin-top: 3px;
-    margin-right: 10px;
-    cursor: pointer;
-}
-
-.privacy-label {
-    line-height: 1.4;
-    font-size: 0.95rem;
-}
-
-.privacy-label a {
-    color: #ff6b6b;
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.privacy-label a:hover {
-    text-decoration: underline;
-}
-
 /* Media query for responsiveness */
 @media (max-width: 768px) {
     .privacy-container {

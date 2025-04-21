@@ -127,7 +127,7 @@ input:focus {
 }
 
 .toggle-password:hover {
-	background: transparent;
+    background: transparent;
     text-decoration: underline;
 }
 

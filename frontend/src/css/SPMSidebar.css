@@ -41,12 +41,6 @@
     font-size: 12px;
 }
 
-.map-container {
-    display: flex;
-    height: 100vh;
-    width: 100vw;
-}
-
 .map {
     flex-grow: 1;
     height: 100vh;

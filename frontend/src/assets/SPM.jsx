@@ -51,7 +51,7 @@ const ShortestPathMap = () => {
     };
 
     return (
-        <div className="map-container">
+        <div className="mapconcon">
             <div className="traffic-legend">
             <span className="legend-item"><span className="color-box green"></span> Fast</span>
             <span className="legend-item"><span className="color-box yellow"></span> Moderate</span>
