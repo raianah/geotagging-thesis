@@ -367,6 +367,48 @@ input:focus, select:focus {
     background-color: #ff5252;
 }
 
+/* CSS for the privacy policy checkbox in the registration form */
+.privacy-checkbox-container {
+    margin: 15px 0;
+}
+
+.checkbox-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+.checkbox-wrapper input[type="checkbox"] {
+    width: auto;
+    margin-right: 10px;
+    cursor: pointer;
+    flex-shrink: 0;
+    height: 16px;
+    width: 16px;
+}
+
+.privacy-label {
+    line-height: 1.4;
+    font-size: 0.95rem;
+    text-align: left;
+    flex: 1;
+}
+
+.privacy-label a {
+    color: #ff6b6b;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.privacy-label a:hover {
+    text-decoration: underline;
+}
+
+.privacy-checkbox-container .error-message {
+    margin-top: 5px;
+    display: block;
+    text-align: left;
+}
+
 /* Mobile responsive styles */
 @media (max-width: 768px) {
     .registration-card {
