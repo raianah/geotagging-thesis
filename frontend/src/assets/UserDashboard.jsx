@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "./Navbar";
 import { AlertCircle, Plus, RefreshCw, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import { getDashboardData, getProfile, addFarm } from "../services/api";
 import "../css/Navbar.css";
 import "../css/UserDashboard.css";
-
-// Gobbledygook Import
-import { MdVerified } from "react-icons/md";
-// End of Gobbledygook
 
 const UserDashboard = ({ darkMode, setDarkMode }) => {
     const [newsItems, setNewsItems] = useState([]);
@@ -22,80 +19,30 @@ const UserDashboard = ({ darkMode, setDarkMode }) => {
         farmSize: "",
         farmType: "Backyard"
     });
-
-    // Account data
-    const accountData = {
-        status: "Active",
-        memberSince: "January 15, 2025",
-        lastLogin: "April 12, 2025",
-        totalFarms: 2,
-        totalHogs: 34,
-        nextInspection: "April 25, 2026",
-        accountType: "Verified"
-    };
-
-    // Farm data - simplified
-    const farmData = [
-        {
-            id: 1,
-            name: "Diaz Farm #1",
-            location: "Brgy. 2",
-            pigCount: 24,
-            type: "Commercial"
-        },
-        {
-            id: 2,
-            name: "Diaz Farm #2",
-            location: "Brgy. Dilao",
-            pigCount: 10,
-            type: "Backyard"
-        }
-    ];
+    const [accountData, setAccountData] = useState(null);
+    const [farmData, setFarmData] = useState([]);
+    const [profile, setProfile] = useState(null);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        // Simulate fetching news data
-        fetchNews();
-    }, []);
-
-    const fetchNews = () => {
         setIsLoading(true);
-        
-        // Simulate API call
-        setTimeout(() => {
-            const mockNewsData = [
-                {
-                    id: 1,
-                    title: "New Vaccination Schedule for Q2 2025",
-                    date: "April 10, 2025",
-                    source: "Balayan Agricultural Office",
-                    summary: "The Balayan Agricultural Office has released the new vaccination schedule for all registered hog farms in the region.",
-                    isUrgent: true,
-                    content: "All registered hog farms in Balayan are required to participate in the Q2 2025 vaccination program. The schedule will run from May 1st to May 30th. Contact the Balayan Agricultural Office at (043) 123-4567 for your farm's scheduled date."
-                },
-                {
-                    id: 2,
-                    title: "Feed Costs Decreased by 5%",
-                    date: "April 8, 2025",
-                    source: "Feed Suppliers Association",
-                    summary: "Good news for hog farmers as feed prices have decreased by 5% due to improved harvests this season.",
-                    isUrgent: false,
-                    content: "Feed prices will be lower starting April 15, 2025. This is a good time to stock up on quality feed for your pigs. Contact your local feed supplier for the new prices."
-                },
-                {
-                    id: 3,
-                    title: "Free Workshop: Better Hog Farming",
-                    date: "April 5, 2025",
-                    source: "Batangas Agricultural College",
-                    summary: "Learn new techniques to improve your hog farm on April 28-29, 2025.",
-                    isUrgent: false,
-                    content: "Join this free two-day workshop to learn about waste management, water saving, and better feeding practices. Registration is free. Call (043) 765-4321 to reserve your spot before April 20."
-                }
-            ];
-            
-            setNewsItems(mockNewsData);
+        setError(null);
+        Promise.all([
+            getDashboardData(),
+            getProfile()
+        ])
+        .then(([dashboard, profile]) => {
+            setAccountData(dashboard.accountInfo || {});
+            setFarmData(dashboard.farms || []);
+            setNewsItems(dashboard.news || []);
+            setProfile(profile);
             setIsLoading(false);
-        }, 1000);
-    };
+        })
+        .catch(err => {
+            setError("Failed to load dashboard data: " + err.message);
+            setIsLoading(false);
+        });
+    }, []);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -105,151 +52,223 @@ const UserDashboard = ({ darkMode, setDarkMode }) => {
         });
     };
 
-    const handleAddBranch = (e) => {
+    const handleAddBranch = async (e) => {
         e.preventDefault();
-        alert("New farm has been added successfully!");
-        setShowAddBranchModal(false);
-        setNewBranchData({
-            branchName: "",
-            address: "",
-            city: "Balayan",
-            province: "Batangas",
-            pigCount: "",
-            farmSize: "",
-            farmType: "Backyard"
-        });
+        setError(null);
+        try {
+            // Call backend to add a new farm
+            await addFarm(newBranchData);
+            alert("New farm has been added successfully!");
+            setShowAddBranchModal(false);
+            setNewBranchData({
+                branchName: "",
+                address: "",
+                city: "Balayan",
+                province: "Batangas",
+                pigCount: "",
+                farmSize: "",
+                farmType: "Backyard"
+            });
+            // Refresh dashboard data
+            setIsLoading(true);
+            const dashboard = await getDashboardData();
+            setAccountData(dashboard.accountInfo || {});
+            setFarmData(dashboard.farms || []);
+            setNewsItems(dashboard.news || []);
+            setIsLoading(false);
+        } catch (err) {
+            setError("Failed to add farm: " + err.message);
+        }
     };
 
     const toggleNewsExpand = (id) => {
         setExpandedNewsItem(expandedNewsItem === id ? null : id);
     };
 
+    // Utility for status badge
+    const getStatusBadge = (status) => {
+        if (!status) return <span className="status-badge pending">Pending</span>;
+        const lower = status.toLowerCase();
+        if (lower === 'verified') return <span className="status-badge verified">Verified</span>;
+        if (lower === 'pending') return <span className="status-badge pending">Pending</span>;
+        if (lower === 'rejected') return <span className="status-badge rejected">Rejected</span>;
+        return <span className="status-badge">{status}</span>;
+    };
+
+    // Utility for date formatting
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return '';
+        return date.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    };
+
+    // Split fullName into firstName and lastName for display
+    const firstName = profile?.fullName ? profile.fullName.split(' ')[0] : '';
+    const lastName = profile?.fullName ? profile.fullName.split(' ').slice(1).join(' ') : '';
+
     return (
         <div className={`dashboard-wrapper ${darkMode ? 'dark-mode' : ''}`}>
-            <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
+            <Navbar 
+                darkMode={darkMode} 
+                setDarkMode={setDarkMode} 
+                currentUser={profile ? {
+                    firstName: profile.fullName ? profile.fullName.split(' ')[0] : '',
+                    lastName: profile.fullName ? profile.fullName.split(' ').slice(1).join(' ') : '',
+                    email: profile.email,
+                    phone: profile.phone,
+                    profilePicture: profile.profilePicture,
+                    accountType: accountData?.accountType || 'Hog Owner',
+                    emailVerified: profile.emailVerified,
+                    phoneVerified: profile.phoneVerified
+                } : undefined}
+            />
 
-            <div className="user-dashboard-container">
-                <h1>Welcome, Virgilio Jr Diaz</h1>
+            {isLoading ? (
+                <div className="loading-indicator">Loading...</div>
+            ) : error ? (
+                <div className="error">{error}</div>
+            ) : (
+                <div className="user-dashboard-container">
+                    <h1>Welcome, {firstName} {lastName}</h1>
 
-                <div className="dashboard-content">
-                    {/* Account Status Card */}
-                    <div className="account-status-card">
-                        <div className="card-header">
-                            <h2>Your Account</h2>
-                            <span className="status-badge active">Active</span>
-                        </div>
-                        <div className="account-info">
-                            <div className="info-row">
-                                <span className="info-label">Member Since</span>
-                                <span className="info-value">{accountData.memberSince}</span>
+                    <div className="dashboard-content">
+                        {/* Account Status Card */}
+                        <div className="account-status-card">
+                            <div className="card-header">
+                                <h2>Your Account</h2>
+                                {/* Always show status badge, fallback to Pending if missing */}
+                                {getStatusBadge(profile?.status)}
                             </div>
-                            <div className="info-row">
-                                <span className="info-label">Total Farms</span>
-                                <span className="info-value">{accountData.totalFarms}</span>
-                            </div>
-                            <div className="info-row">
-                                <span className="info-label">Total Pigs</span>
-                                <span className="info-value">{accountData.totalHogs}</span>
-                            </div>
-                            <div className="info-row">
-                                <span className="info-label">Account Valid Until</span>
-                                <span className="info-value">{accountData.nextInspection}</span>
-                            </div>
-
-                            {/* Gobbledygook Info - Might Remove Soon */}
-                            <div className="info-row">
-                                <span className="info-label">Account Status</span>
-                                <span className="info-value"><MdVerified style={{ color: 'yellow' }} /> {accountData.accountType}</span>
-                            </div>
-                            <div className="info-row">
-                                <span className="info-label">Favorite Relapse Song</span>
-                                <span className="info-value">Cup of Joe - Multo</span>
-                            </div>
-                            {/* End of Gobbledygook */}
-
-                        </div>
-                        {/* Unlock this shit if you want buttons below */}
-                        {/* <div className="account-actions">
-                            <button className="action-button">Update Profile</button>
-                            <button className="action-button">View Certificates</button>
-                        </div> */}
-                    </div>
-
-                    {/* Farms Card */}
-                    <div className="add-branch-card">
-                        <h2>Your Farms</h2>
-                        <div className="farms-summary">
-                            {farmData.map(farm => (
-                                <div key={farm.id} className="farm-card">
-                                    <h3>{farm.name}</h3>
-                                    <div className="farm-details">
-                                        <p><strong>Location:</strong> {farm.location}</p>
-                                        <p><strong>Pigs:</strong> {farm.pigCount}</p>
-                                        <p><strong>Type:</strong> {farm.type}</p>
-                                    </div>
+                            <div className="account-info">
+                                <div className="info-row">
+                                    <span className="info-label">Member Since</span>
+                                    <span className="info-value">{formatDate(profile?.userCreated)}</span>
                                 </div>
-                            ))}
+                                {/* Show location if available */}
+                                {profile?.location && (
+                                    <div className="info-row">
+                                        <span className="info-label">Location</span>
+                                        <span className="info-value">{profile.location}
+                                            {typeof profile.latitude === 'number' && typeof profile.longitude === 'number' &&
+                                                <> (<span style={{fontSize:'0.9em'}}>{profile.latitude.toFixed(4)}, {profile.longitude.toFixed(4)}</span>)</>
+                                            }
+                                        </span>
+                                    </div>
+                                )}
+                                <div className="info-row">
+                                    <span className="info-label">Total Farms</span>
+                                    <span className="info-value">{accountData?.totalFarms}</span>
+                                </div>
+                                <div className="info-row">
+                                    <span className="info-label">Total Pigs</span>
+                                    <span className="info-value">{accountData?.totalHogs}</span>
+                                </div>
+                                <div className="info-row">
+                                    <span className="info-label">Account Valid Until</span>
+                                    <span className="info-value">{accountData?.nextInspection}</span>
+                                </div>
+                                <div className="info-row">
+                                    <span className="info-label">Account Type</span>
+                                    <span className="info-value">{accountData?.accountType}</span>
+                                </div>
+                            </div>
                         </div>
-                        <button className="add-branch-btn" onClick={() => setShowAddBranchModal(true)}>
-                            <Plus size={16} />
-                            Add New Farm
-                        </button>
-                    </div>
 
-                    {/* News Feed Card */}
-                    <div className="news-feed-card">
-                        <div className="card-header">
-                            <h2>Important News</h2>
-                            <button className="refresh-btn" onClick={fetchNews} disabled={isLoading}>
-                                <RefreshCw size={16} className={isLoading ? "spinning" : ""} />
-                            </button>
-                        </div>
-                        {isLoading ? (
-                            <div className="loading-indicator">Loading news...</div>
-                        ) : (
-                            <div className="news-list">
-                                {newsItems.map(item => (
-                                    <div key={item.id} className="news-item">
-                                        <div className="news-header">
-                                            {item.isUrgent && (
-                                                <div className="urgent-tag">
-                                                    <AlertCircle size={14} />
-                                                    Urgent
-                                                </div>
-                                            )}
-                                            <h3 className="news-title">{item.title}</h3>
-                                            <div className="news-meta">
-                                                <span>{item.date}</span>
-                                            </div>
-                                        </div>
-                                        <p className="news-summary">{item.summary}</p>
-                                        
-                                        {expandedNewsItem === item.id && (
-                                            <div className="news-content">{item.content}</div>
-                                        )}
-                                        
-                                        <div className="news-actions">
-                                            <button className="expand-btn" onClick={() => toggleNewsExpand(item.id)}>
-                                                {expandedNewsItem === item.id ? (
-                                                    <>
-                                                        <ChevronUp size={16} />
-                                                        Show Less
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <ChevronDown size={16} />
-                                                        Read More
-                                                    </>
-                                                )}
-                                            </button>
+                        {/* Farms Card */}
+                        <div className="add-branch-card">
+                            <h2>Your Farms</h2>
+                            <div className="farms-summary">
+                                {farmData.map(farm => (
+                                    <div key={farm.id} className="farm-card">
+                                        <h3>{farm.name}</h3>
+                                        <div className="farm-details">
+                                            <p><strong>Location:</strong> {farm.location}</p>
+                                            <p><strong>Pigs:</strong> {farm.pigCount}</p>
+                                            <p><strong>Type:</strong> {farm.farmType}</p>
                                         </div>
                                     </div>
                                 ))}
                             </div>
-                        )}
+                            <button className="add-branch-btn" onClick={() => setShowAddBranchModal(true)}>
+                                <Plus size={16} />
+                                Add New Farm
+                            </button>
+                        </div>
+
+                        {/* News Feed Card */}
+                        <div className="news-feed-card">
+                            <div className="card-header">
+                                <h2>Important News</h2>
+                                <button className="refresh-btn" onClick={() => {
+                                    setIsLoading(true);
+                                    setError(null);
+                                    Promise.all([
+                                        getDashboardData(),
+                                        getProfile()
+                                    ])
+                                    .then(([dashboard, profile]) => {
+                                        setAccountData(dashboard.accountInfo || {});
+                                        setFarmData(dashboard.farms || []);
+                                        setNewsItems(dashboard.news || []);
+                                        setProfile(profile);
+                                        setIsLoading(false);
+                                    })
+                                    .catch(err => {
+                                        setError("Failed to load dashboard data: " + err.message);
+                                        setIsLoading(false);
+                                    });
+                                }} disabled={isLoading}>
+                                    <RefreshCw size={16} className={isLoading ? "spinning" : ""} />
+                                </button>
+                            </div>
+                            {isLoading ? (
+                                <div className="loading-indicator">Loading news...</div>
+                            ) : (
+                                <div className="news-list">
+                                    {newsItems.map(item => (
+                                        <div key={item.id} className="news-item">
+                                            <div className="news-header">
+                                                {item.isUrgent && (
+                                                    <div className="urgent-tag">
+                                                        <AlertCircle size={14} />
+                                                        Urgent
+                                                    </div>
+                                                )}
+                                                <h3 className="news-title">{item.title}</h3>
+                                                <div className="news-meta">
+                                                    <span>{item.date}</span>
+                                                </div>
+                                            </div>
+                                            <p className="news-summary">{item.summary}</p>
+                                            
+                                            {expandedNewsItem === item.id && (
+                                                <div className="news-content">{item.content}</div>
+                                            )}
+                                            
+                                            <div className="news-actions">
+                                                <button className="expand-btn" onClick={() => toggleNewsExpand(item.id)}>
+                                                    {expandedNewsItem === item.id ? (
+                                                        <>
+                                                            <ChevronUp size={16} />
+                                                            Show Less
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <ChevronDown size={16} />
+                                                            Read More
+                                                        </>
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* Add Farm Modal */}
             {showAddBranchModal && (

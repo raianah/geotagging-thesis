@@ -7,11 +7,11 @@ import L from "leaflet";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 import "../css/ASFMap.css";
+import { getHogOwners, getAccounts } from "../services/api";
 
 // Fix for default icon in Leaflet 
 const defaultIcon = L.icon({ 
     iconUrl: markerIcon, 
-    shadowUrl: markerShadow, 
     iconSize: [25, 41], 
     iconAnchor: [12, 41], 
     popupAnchor: [1, -34] 
@@ -20,25 +20,19 @@ const defaultIcon = L.icon({
 // Custom smaller icon for hog owners
 const hogOwnerIcon = L.icon({
     iconUrl: markerIcon,
-    shadowUrl: markerShadow,
     iconSize: [15, 25],  // Smaller than default
     iconAnchor: [7, 25],
     popupAnchor: [1, -20]
 });
 
-// Dummy hog owner data
-const hogOwnersData = [
-    { id: 1, name: "Juan Santos", lat: 13.9353, lng: 120.736, farmName: "Santos Piggery" },
-    { id: 2, name: "Maria Reyes", lat: 13.9310, lng: 120.730, farmName: "Reyes Hog Farm" },
-    { id: 3, name: "Pedro Lim", lat: 13.9380, lng: 120.726, farmName: "Lim's Swine" },
-    { id: 4, name: "Ana Cruz", lat: 13.9290, lng: 120.735, farmName: "Cruz Farms" },
-    { id: 5, name: "Jose Mendoza", lat: 13.9350, lng: 120.743, farmName: "Mendoza Piggery" },
-    { id: 6, name: "Elena Tan", lat: 13.9400, lng: 120.723, farmName: "El-Tan Hogs" },
-    { id: 7, name: "Manuel Garcia", lat: 13.9320, lng: 120.740, farmName: "Garcia Pig Ranch" },
-    { id: 8, name: "Sophia Bautista", lat: 13.9270, lng: 120.731, farmName: "Bautista Livestock" },
-    { id: 9, name: "Ricardo Flores", lat: 13.9370, lng: 120.745, farmName: "Flores Farms" },
-    { id: 10, name: "Teresa Castro", lat: 13.9420, lng: 120.728, farmName: "Castro Piggery" },
-];
+// Custom icon for registered & verified users
+const verifiedUserIcon = L.icon({
+    iconUrl: markerIcon,
+    iconSize: [18, 28],
+    iconAnchor: [9, 28],
+    popupAnchor: [1, -22],
+    className: "verified-user-marker"
+});
 
 // Map Events component to handle click events
 const MapEvents = ({ onClick }) => {
@@ -131,58 +125,65 @@ const ZoneItem = ({ zone, affectedOwners }) => {
 
 // Full ASF Map Content
 const ASFMapContent = () => {
-    const [position, setPosition] = useState([13.9333, 120.733]); // Default position
-    const [hasSelected, setHasSelected] = useState(false);
-    const [location, setLocation] = useState("Fetching location...");
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [location, setLocation] = useState("Select a marker to view details");
     const mapContainerRef = useRef(null);
-    
+    const [hogOwners, setHogOwners] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [verifiedUsers, setVerifiedUsers] = useState([]);
+
     const zones = [
         { label: "Depopulation Zone", radius: 500, color: "#ff4d4d" },
         { label: "Surveillance Zone", radius: 1000, color: "#ffd633" }
     ];
 
-    // Calculate affected owners for each zone
-    const getAffectedOwners = (zoneRadius) => {
-        // Function to calculate distance between two points in meters
-        const calculateDistance = (lat1, lon1, lat2, lon2) => {
-            const R = 6371000; // Earth radius in meters
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = 
-                Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-                Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
-        };
-
-        return hogOwnersData.filter(owner => {
-            const distance = calculateDistance(
-                position[0], position[1], 
-                owner.lat, owner.lng
-            );
-            return distance <= zoneRadius;
-        });
-    };
-
-    const handleMapClick = (e) => {
-        setPosition([e.latlng.lat, e.latlng.lng]);
-        setHasSelected(true);
-    };
-
     useEffect(() => {
-        const fetchLocation = async () => {
-            const [lat, lng] = position;
+        async function fetchHogOwners() {
+            setLoading(true);
+            setError(null);
             try {
-                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
-                const data = await response.json();
-                setLocation(data.display_name || "Unknown location");
-            } catch (error) {
-                setLocation("Location unavailable");
+                const data = await getHogOwners();
+                setHogOwners(data);
+            } catch (err) {
+                setError("Failed to load hog owners.");
             }
-        };
-        fetchLocation();
-    }, [position]);
+            setLoading(false);
+        }
+        fetchHogOwners();
+
+        async function fetchVerifiedUsers() {
+            try {
+                const accounts = await getAccounts();
+                const verified = accounts.filter(acc => acc.status && acc.status.toLowerCase() === 'verified' && acc.latitude && acc.longitude);
+                setVerifiedUsers(verified.map(acc => ({
+                    id: acc.uid,
+                    name: acc.fullName,
+                    lat: acc.latitude,
+                    lng: acc.longitude,
+                    email: acc.emailAddress,
+                    status: acc.status,
+                    phone: acc.contactNumber
+                })));
+            } catch (err) {
+                // Optionally set error state
+            }
+        }
+        fetchVerifiedUsers();
+    }, []);
+
+    // Update location info when marker is clicked
+    const handleMarkerClick = async (user) => {
+        setSelectedUser(user);
+        // Fetch location from coordinates
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${user.lat}&lon=${user.lng}`);
+            const data = await response.json();
+            setLocation(data.display_name || "Unknown location");
+        } catch (error) {
+            setLocation("Location unavailable");
+        }
+    };
 
     return (
         <div className="asf-map-wrapper">
@@ -194,76 +195,92 @@ const ASFMapContent = () => {
                     <span className="asf-section-text">ASF Outbreak Location</span>
                 </div>
                 <div className="asf-coord-box">
-                    <strong>Latitude:</strong> {position[0].toFixed(5)}<br />
-                    <strong>Longitude:</strong> {position[1].toFixed(5)}<br />
-                    <strong>Location:</strong> {location}
+                    {selectedUser ? (
+                        <>
+                            <div><b>Latitude:</b> {selectedUser.lat}</div>
+                            <div><b>Longitude:</b> {selectedUser.lng}</div>
+                            <div><b>Location:</b> {location}</div>
+                        </>
+                    ) : (
+                        <div>Select a marker to view coordinates and location.</div>
+                    )}
                 </div>
                 <div className="asf-section">
                     <FiAlertTriangle className="asf-icon" />
                     <span className="asf-section-text">Affected Zones</span>
                 </div>
-                <div className="asf-zone-list">
-                    {zones.map((zone, index) => (
-                        <ZoneItem 
-                            key={index} 
-                            zone={zone} 
-                            affectedOwners={getAffectedOwners(zone.radius)} 
-                        />
-                    ))}
+                <div className="asf-zone-item" style={{ backgroundColor: '#ff4d4d' }}>
+                    <div className="asf-zone-header">
+                        <MdLocationPin className="asf-zone-icon" />
+                        <span>Depopulation Zone</span>
+                    </div>
+                    <div className="asf-coords">Approx. within 0.5KM</div>
+                </div>
+                <div className="asf-zone-item" style={{ backgroundColor: '#ffd633' }}>
+                    <div className="asf-zone-header">
+                        <MdLocationPin className="asf-zone-icon" />
+                        <span>Surveillance Zone</span>
+                    </div>
+                    <div className="asf-coords">Approx. within 1KM</div>
                 </div>
             </div>
 
             {/* Map */}
             <div className="asf-map-container" ref={mapContainerRef}>
+                {loading && <div>Loading hog owner locations...</div>}
+                {error && <div className="error-message">{error}</div>}
                 <MapContainer 
-                    center={position} 
+                    center={selectedUser ? [selectedUser.lat, selectedUser.lng] : [13.9333, 120.733]} 
                     zoom={14} 
-                    className="asf-leaflet-map" 
-                    whenCreated={(map) => {
-                        // Force map to recalculate size after render
-                        setTimeout(() => {
-                            map.invalidateSize(true);
-                        }, 250);
-                    }}
+                    style={{ height: "100%", width: "100%" }}
+                    ref={mapContainerRef}
                 >
                     <TileLayer 
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
                         attribution="&copy; OpenStreetMap contributors" 
                     />
                     
-                    <MapEvents onClick={handleMapClick} />
                     <MapResizer />
                     
-                    {hasSelected && zones.map((zone, index) => (
-                        <Circle 
-                            key={index} 
-                            center={position} 
-                            radius={zone.radius} 
-                            color={zone.color} 
-                            fillOpacity={0.3} 
+                    {/* Red & Yellow Zones for each verified user */}
+                    {verifiedUsers.map(user => [
+                        <Circle
+                            key={`red-${user.id}`}
+                            center={[user.lat, user.lng]}
+                            radius={500}
+                            color="#ff4d4d"
+                            fillOpacity={0.2}
+                        />, 
+                        <Circle
+                            key={`yellow-${user.id}`}
+                            center={[user.lat, user.lng]}
+                            radius={1000}
+                            color="#ffd633"
+                            fillOpacity={0.15}
                         />
+                    ])}
+                    
+                    {/* Verified user markers */}
+                    {verifiedUsers.map(user => (
+                        <Marker 
+                            key={user.id} 
+                            position={[user.lat, user.lng]} 
+                            icon={verifiedUserIcon}
+                            eventHandlers={{ click: () => handleMarkerClick(user) }}
+                        >
+                            <Popup>
+                                <div className="custom-popup">
+                                    <b>{user.name}</b><br />
+                                    <span>{user.email}</span><br />
+                                    <span>Status: {user.status}</span><br />
+                                    <span>Phone: {user.phone}</span>
+                                </div>
+                            </Popup>
+                        </Marker>
                     ))}
                     
-                    {/* Main outbreak marker */}
-                    <Marker 
-                        position={position} 
-                        icon={defaultIcon} 
-                        draggable={true} 
-                        eventHandlers={{ 
-                            dragend: (e) => { 
-                                setPosition([e.target.getLatLng().lat, e.target.getLatLng().lng]); 
-                                setHasSelected(true); 
-                            } 
-                        }}
-                    >
-                        <Popup>
-                            <b>ASF Outbreak Detected</b><br />
-                            📍 {position[0].toFixed(4)}, {position[1].toFixed(4)}
-                        </Popup>
-                    </Marker>
-                    
                     {/* Hog owner markers */}
-                    {hogOwnersData.map(owner => (
+                    {hogOwners.map(owner => (
                         <Marker 
                             key={owner.id} 
                             position={[owner.lat, owner.lng]} 

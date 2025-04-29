@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { login, getProfile } from "../services/api";
 import "../css/LoginCSS.css";
 import logo from '../img/logo.png';
 
-export default function LoginForm({ handleLogin }) {
+export default function LoginForm() {
     const [formData, setFormData] = useState({ email: "", password: "" });
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState({});
+    const [loading, setLoading] = useState(false);
 
     const navigate = useNavigate();
 
@@ -44,37 +46,27 @@ export default function LoginForm({ handleLogin }) {
         
         if (!validateForm()) return;
         
+        setLoading(true);
+        setErrors({});
+        
         try {
-            const response = await fetch("http://localhost:3000/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(formData),
-            });
-            
-            const data = await response.json();
-            console.log("Login response:", data);
-            
-            if (response.ok) {
-                // TEMPORARY WORKAROUND: Create dummy user data if missing from response
-                const userData = data.user || {
-                    uid: "temp-" + Date.now(),
-                    fullName: formData.email.split('@')[0], // Use part of email as name
-                    emailAddress: formData.email
-                };
-                
-                // TEMPORARY WORKAROUND: Create dummy token if missing
-                const token = data.token || "temp-token-" + Date.now();
-                
-                // Call handleLogin with the user data and token
-                handleLogin(userData, token);
-                alert("Login successful!");
-                navigate("/");
+            const { token } = await login(formData.email, formData.password);
+            localStorage.setItem("authToken", token);
+            const profile = await getProfile();
+            localStorage.setItem("profile", JSON.stringify(profile));
+            setLoading(false);
+            alert("Login successful!");
+            // Robust, case-insensitive redirect based on user role
+            if (profile.role && profile.role.toLowerCase() === 'employee') {
+                navigate("/employee-dashboard");
+            } else if (profile.role && profile.role.toLowerCase() === 'user') {
+                navigate("/dashboard");
             } else {
-                setErrors({...errors, form: data.error || "Invalid credentials."});
+                navigate("/dashboard");
             }
         } catch (error) {
-            console.error("Error:", error);
-            setErrors({...errors, form: "Something went wrong. Please try again."});
+            setLoading(false);
+            setErrors({ form: error.message || "Invalid credentials." });
         }
     };
 
@@ -105,6 +97,7 @@ export default function LoginForm({ handleLogin }) {
                                     placeholder="Enter your email" 
                                     value={formData.email} 
                                     onChange={handleChange} 
+                                    disabled={loading}
                                 />
                                 {errors.email && <span className="error-message">{errors.email}</span>}
                             </div>
@@ -119,11 +112,13 @@ export default function LoginForm({ handleLogin }) {
                                     placeholder="Enter your password" 
                                     value={formData.password} 
                                     onChange={handleChange} 
+                                    disabled={loading}
                                 />
                                 <button 
                                     type="button"
                                     className="toggle-password"
                                     onClick={togglePasswordVisibility}
+                                    disabled={loading}
                                 >
                                     {showPassword ? "Hide" : "Show"}
                                 </button>
@@ -131,7 +126,7 @@ export default function LoginForm({ handleLogin }) {
                             </div>
                         </div>
                         
-                        <button type="submit" className="login-btn">Login</button>
+                        <button type="submit" className="login-btn" disabled={loading}>{loading ? "Logging in..." : "Login"}</button>
                     </form>
                     
                     <div className="register-link">
