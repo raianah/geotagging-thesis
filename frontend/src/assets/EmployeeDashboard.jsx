@@ -3,6 +3,7 @@ import Navbar from "./Navbar";
 import ASFMap from "./ASFMap";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { ChevronLeft, ChevronRight, Search, ArrowUpDown, CheckCircle, XCircle, Eye, User, Mail, MapPin, Calendar, Phone, Home, Clipboard, X } from "lucide-react";
+import { getAccounts, getDashboardData, getPendingAccounts, updateAccountStatus } from "../services/api";
 import "../css/Navbar.css";
 import "../css/EmployeeDashboard.css";
 
@@ -13,10 +14,24 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
     const [showPendingModal, setShowPendingModal] = useState(false);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [selectedAccount, setSelectedAccount] = useState(null);
+    const [registeredUsers, setRegisteredUsers] = useState([]);
     const [pendingAccounts, setPendingAccounts] = useState([]);
+    const [filteredAccounts, setFilteredAccounts] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [sortConfig, setSortConfig] = useState({ key: "date", direction: "desc" });
-    const [filteredAccounts, setFilteredAccounts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [asfOutbreakCount, setAsfOutbreakCount] = useState(0);
+
+    // Fetch authenticated user profile from localStorage
+    const [currentUser, setCurrentUser] = useState(() => {
+        try {
+            const profile = localStorage.getItem("profile");
+            return profile ? JSON.parse(profile) : null;
+        } catch {
+            return null;
+        }
+    });
 
     const statTypes = [
         'Total No. of Registered Hog Raisers',
@@ -24,172 +39,33 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
         'ASF Outbreak Reports'
     ];
 
-    // Generate some mock data for pending accounts
+    // Defensive: Only count registered hog raisers with role 'user' (case-insensitive) and status 'verified'
     useEffect(() => {
-        const mockAccounts = [
-            { 
-                id: 1, 
-                name: "Juan Dela Cruz", 
-                email: "juan@example.com", 
-                location: "Bulacan", 
-                date: "2025-04-18", 
-                status: "pending",
-                phone: "+63 912 345 6789",
-                address: "123 Main St, San Miguel, Bulacan",
-                farmSize: "2.5 hectares",
-                hogCount: 25,
-                farmType: "Backyard",
-                experience: "5 years",
-                notes: "Previously registered with the local agricultural office. Has completed training on biosecurity measures.",
-                documents: ["Valid ID", "Land Title", "Business Permit"]
-            },
-            { 
-                id: 2, 
-                name: "Maria Santos", 
-                email: "maria@example.com", 
-                location: "Batangas", 
-                date: "2025-04-17", 
-                status: "pending",
-                phone: "+63 917 876 5432",
-                address: "456 Rizal Ave, Lipa City, Batangas",
-                farmSize: "1.8 hectares",
-                hogCount: 18,
-                farmType: "Backyard",
-                experience: "3 years",
-                notes: "New to commercial hog raising. Seeking guidance on proper practices.",
-                documents: ["Valid ID", "Barangay Certificate", "Tax Declaration"]
-            },
-            { 
-                id: 3, 
-                name: "Pedro Reyes", 
-                email: "pedro@example.com", 
-                location: "Laguna", 
-                date: "2025-04-15", 
-                status: "pending",
-                phone: "+63 918 765 4321",
-                address: "789 National Hwy, Calamba, Laguna",
-                farmSize: "4.2 hectares",
-                hogCount: 45,
-                farmType: "Commercial",
-                experience: "10 years",
-                notes: "Expanding existing operation. Has implemented biosecurity protocols.",
-                documents: ["Valid ID", "Business Registration", "Environmental Compliance Certificate"]
-            },
-            { 
-                id: 4, 
-                name: "Ana Gonzales", 
-                email: "ana@example.com", 
-                location: "Cavite", 
-                date: "2025-04-14", 
-                status: "pending",
-                phone: "+63 919 234 5678",
-                address: "321 Aguinaldo Hwy, Dasmariñas, Cavite",
-                farmSize: "1.5 hectares",
-                hogCount: 15,
-                farmType: "Backyard",
-                experience: "2 years",
-                notes: "First-time registrant. Attended training sessions on hog raising.",
-                documents: ["Valid ID", "Land Certificate"]
-            },
-            { 
-                id: 5, 
-                name: "Carlos Tan", 
-                email: "carlos@example.com", 
-                location: "Rizal", 
-                date: "2025-04-12", 
-                status: "pending",
-                phone: "+63 920 345 6789",
-                address: "654 Marcos Hwy, Antipolo, Rizal",
-                farmSize: "3.7 hectares",
-                hogCount: 40,
-                farmType: "Commercial",
-                experience: "7 years",
-                notes: "Recently relocated from Bulacan. Previously registered under a different municipality.",
-                documents: ["Valid ID", "Business Permit", "Sanitary Permit"]
-            },
-            { 
-                id: 6, 
-                name: "Elena Magtanggol", 
-                email: "elena@example.com", 
-                location: "Pampanga", 
-                date: "2025-04-10", 
-                status: "pending",
-                phone: "+63 921 567 8901",
-                address: "987 MacArthur Hwy, San Fernando, Pampanga",
-                farmSize: "2.3 hectares",
-                hogCount: 22,
-                farmType: "Backyard",
-                experience: "4 years",
-                notes: "Expanding operation. Has completed certification on disease prevention.",
-                documents: ["Valid ID", "Land Title", "Tax Clearance"]
-            },
-            { 
-                id: 7, 
-                name: "Roberto Lim", 
-                email: "roberto@example.com", 
-                location: "Nueva Ecija", 
-                date: "2025-04-08", 
-                status: "pending",
-                phone: "+63 922 678 9012",
-                address: "456 Maharlika Hwy, Cabanatuan, Nueva Ecija",
-                farmSize: "5.1 hectares",
-                hogCount: 60,
-                farmType: "Commercial",
-                experience: "12 years",
-                notes: "Long-time hog raiser. Recently adopted modern farming techniques.",
-                documents: ["Valid ID", "Business Registration", "Environmental Compliance Certificate"]
-            },
-            { 
-                id: 8, 
-                name: "Sofia Cruz", 
-                email: "sofia@example.com", 
-                location: "Tarlac", 
-                date: "2025-04-05", 
-                status: "pending",
-                phone: "+63 923 789 0123",
-                address: "234 Provincial Rd, Tarlac City, Tarlac",
-                farmSize: "1.9 hectares",
-                hogCount: 20,
-                farmType: "Backyard",
-                experience: "3 years",
-                notes: "Seeking assistance with biosecurity implementation.",
-                documents: ["Valid ID", "Property Document"]
-            },
-            { 
-                id: 9, 
-                name: "Miguel Bautista", 
-                email: "miguel@example.com", 
-                location: "Zambales", 
-                date: "2025-04-02", 
-                status: "pending",
-                phone: "+63 924 890 1234",
-                address: "567 National Rd, Olongapo, Zambales",
-                farmSize: "3.2 hectares",
-                hogCount: 35,
-                farmType: "Commercial",
-                experience: "6 years",
-                notes: "Transitioning from poultry to hog raising. Has relevant agricultural experience.",
-                documents: ["Valid ID", "Business Permit", "Sanitary Permit"]
-            },
-            { 
-                id: 10, 
-                name: "Olivia Reyes", 
-                email: "olivia@example.com", 
-                location: "Pangasinan", 
-                date: "2025-04-01", 
-                status: "pending",
-                phone: "+63 925 901 2345",
-                address: "890 Lingayen Hwy, Dagupan, Pangasinan",
-                farmSize: "2.8 hectares",
-                hogCount: 30,
-                farmType: "Commercial",
-                experience: "5 years",
-                notes: "Family-run operation. Looking to modernize farming practices.",
-                documents: ["Valid ID", "Land Title", "Business Permit"]
-            },
-        ];
-        setPendingAccounts(mockAccounts);
-        setFilteredAccounts(mockAccounts);
+        async function fetchRegisteredUsers() {
+            const updated = await getAccounts();
+            setRegisteredUsers(updated.filter(acc => acc.role && acc.role.toLowerCase() === 'user' && acc.status && acc.status.toLowerCase() === 'verified'));
+        }
+        fetchRegisteredUsers();
+    }, []);
+
+    // Fetch real pending accounts and verified users from backend
+    useEffect(() => {
+        setLoading(true);
+        setError(null);
+        Promise.all([
+            getPendingAccounts(),
+            getDashboardData()
+        ])
+            .then(([pending, dashboard]) => {
+                setPendingAccounts(pending);
+                setFilteredAccounts(pending);
+                setAsfOutbreakCount(dashboard.asfOutbreakCount || 0);
+                setLoading(false);
+            })
+            .catch(err => {
+                setError("Failed to fetch accounts or outbreak data: " + err.message);
+                setLoading(false);
+            });
     }, []);
 
     useEffect(() => {
@@ -209,6 +85,44 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [showGraphModal, selectedStat]);
 
+    useEffect(() => {
+        // Filter accounts by search term
+        const q = searchTerm.toLowerCase();
+        setFilteredAccounts(
+            pendingAccounts.filter(acc =>
+                acc.fullName.toLowerCase().includes(q) ||
+                acc.emailAddress.toLowerCase().includes(q) ||
+                (acc.contactNumber || "").toLowerCase().includes(q)
+            )
+        );
+    }, [searchTerm, pendingAccounts]);
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (!showPendingModal) return;
+            
+            if (e.key === 'Escape') {
+                closePendingModal();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [showPendingModal]);
+
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (!showDetailsModal) return;
+            
+            if (e.key === 'Escape') {
+                closeDetailsModal();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [showDetailsModal]);
+
     // Filter and sort accounts when search term or sort config changes
     useEffect(() => {
         let results = [...pendingAccounts];
@@ -217,8 +131,8 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
         if (searchTerm) {
             const lowercasedTerm = searchTerm.toLowerCase();
             results = results.filter(account => 
-                account.name.toLowerCase().includes(lowercasedTerm) ||
-                account.email.toLowerCase().includes(lowercasedTerm) ||
+                account.fullName.toLowerCase().includes(lowercasedTerm) ||
+                account.emailAddress.toLowerCase().includes(lowercasedTerm) ||
                 account.location.toLowerCase().includes(lowercasedTerm)
             );
         }
@@ -294,89 +208,93 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
         setSortConfig({ key, direction });
     };
 
-    const handleAccountAction = (id, action) => {
-        // In a real app, this would send an API request
-        if (action === 'approve' || action === 'reject') {
-            const updatedAccounts = pendingAccounts.filter(account => account.id !== id);
-            setPendingAccounts(updatedAccounts);
-            
-            // If we're viewing details of an account that's being removed, close the details modal
-            if (selectedAccount && selectedAccount.id === id) {
-                closeDetailsModal();
+    // Accept or reject a pending account
+    const handleAccountAction = async (uid, action) => {
+        if (action !== 'approve' && action !== 'reject') return;
+        const newStatus = action === 'approve' ? 'verified' : 'rejected';
+        try {
+            await updateAccountStatus(uid, newStatus);
+            // Remove from pending list if approved, otherwise update status in place
+            if (action === 'approve') {
+                setPendingAccounts(prev => prev.filter(acc => acc.uid !== uid));
+                setFilteredAccounts(prev => prev.filter(acc => acc.uid !== uid));
+                const updated = await getAccounts();
+                setRegisteredUsers(updated.filter(acc => acc.role && acc.role.toLowerCase() === 'user' && acc.status && acc.status.toLowerCase() === 'verified'));
+            } else {
+                setPendingAccounts(prev => prev.map(acc => acc.uid === uid ? { ...acc, status: 'rejected' } : acc));
+                setFilteredAccounts(prev => prev.map(acc => acc.uid === uid ? { ...acc, status: 'rejected' } : acc));
             }
-            
-            // Show a temporary notification (would be better with a toast system)
+            // If viewing details of this account, close modal
+            if (selectedAccount && selectedAccount.uid === uid) closeDetailsModal();
             alert(`Account ${action === 'approve' ? 'approved' : 'rejected'} successfully!`);
+        } catch (err) {
+            alert('Failed to update account status: ' + err.message);
         }
     };
 
-    // Generate data for the last 13 months
+    // Dynamic stat values based on backend data and logged-in employee
+    // Registered users: only verified hog owners (role === 'user' && status === 'verified')
+    // Pending applications: only pending
+    // ASF Outbreak Reports: dynamic
+    const statValues = {
+        'Total No. of Registered Hog Raisers': registeredUsers.length,
+        'Pending Applications': pendingAccounts.filter(acc => acc.role && acc.role.toLowerCase() === 'user' && acc.status && acc.status.toLowerCase() === 'pending').length,
+        'ASF Outbreak Reports': asfOutbreakCount,
+    };
+
+    // Generate chart data based on real registration dates and ASF outbreaks
     const generateMonthlyData = () => {
         const months = [
-            'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+            'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
             'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
         ];
-        
         const currentDate = new Date();
-        const currentMonth = currentDate.getMonth(); // 0-11
-        
+        const currentMonth = currentDate.getMonth();
+        const currentYear = currentDate.getFullYear();
         const last13Months = [];
-        
-        // Loop backwards from current month to get the last 13 months
         for (let i = 0; i < 13; i++) {
-            // Calculate the month index (handling wrap-around to previous year)
             const monthIndex = (currentMonth - i + 12) % 12;
-            last13Months.unshift(months[monthIndex]);
+            const year = currentYear - Math.floor((12 - currentMonth + i) / 12);
+            last13Months.unshift({
+                label: `${months[monthIndex]} ${year}`,
+                month: monthIndex,
+                year
+            });
         }
-        
-        // Create the chart data with realistic patterns
+        // Aggregate registered users by registration month/year
+        const userRegistrationsByMonth = last13Months.map(({label, month, year}) => {
+            const count = registeredUsers.filter(user => {
+                if (!user.userCreated) return false;
+                const regDate = new Date(user.userCreated);
+                return regDate.getMonth() === month && regDate.getFullYear() === year;
+            }).length;
+            return { name: label, value: count };
+        });
+        // Aggregate pending applications by registration month/year
+        const pendingByMonth = last13Months.map(({label, month, year}) => {
+            const count = pendingAccounts.filter(user => {
+                if (!user.userCreated) return false;
+                const regDate = new Date(user.userCreated);
+                return regDate.getMonth() === month && regDate.getFullYear() === year;
+            }).length;
+            return { name: label, value: count };
+        });
+        // Outbreaks placeholder (for now, only total count, not by month)
+        const outbreaksByMonth = last13Months.map(({label}, idx) => {
+            // Optionally, if outbreak data includes dates, aggregate by month
+            // For now, only total count for the last month
+            if (idx === last13Months.length - 1) {
+                return { name: label, value: asfOutbreakCount };
+            }
+            return { name: label, value: 0 };
+        });
         return {
-            'Total No. of Registered Hog Raisers': last13Months.map((month, index) => {
-                // Generate semi-realistic data with an upward trend
-                const baseValue = 7;
-                const randomFactor = Math.floor(Math.random() * 5);
-                const trendFactor = Math.floor(index * 0.7); // Slight upward trend
-                return {
-                    name: month,
-                    value: baseValue + randomFactor + trendFactor
-                };
-            }),
-            
-            'Pending Applications': last13Months.map((month) => {
-                // Random number between 1 and 5
-                return {
-                    name: month,
-                    value: Math.floor(Math.random() * 5) + 1
-                };
-            }),
-            
-            'ASF Outbreak Reports': last13Months.map((month) => {
-                // Mostly zeros with occasional outbreaks (1 or 2)
-                const randomValue = Math.random();
-                let value = 0;
-                if (randomValue > 0.7) {
-                    value = 1;
-                } else if (randomValue > 0.95) {
-                    value = 2;
-                }
-                return {
-                    name: month,
-                    value: value
-                };
-            })
+            'Total No. of Registered Hog Raisers': userRegistrationsByMonth,
+            'Pending Applications': pendingByMonth,
+            'ASF Outbreak Reports': outbreaksByMonth
         };
     };
-
-    // Generate the chart data
     const chartData = generateMonthlyData();
-
-    // Fixed stat values from the updated version
-    const statValues = {
-        'Total No. of Registered Hog Raisers': 38,
-        'Pending Applications': 10,
-        'ASF Outbreak Reports': 2,
-        'Hogs Ready for Market': 10
-    };
 
     // Custom tooltip component to prevent highlighting
     const CustomTooltip = ({ active, payload, label }) => {
@@ -400,15 +318,17 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
         return colors[stat] || '#ffcc00';
     };
 
-    // Format date for display
-    const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    // Fix Date Applied formatting for pending accounts
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return '';
+        return date.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     };
 
     return (
         <div className='dashboard-wrapper'>
-            <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
+            <Navbar darkMode={darkMode} setDarkMode={setDarkMode} currentUser={currentUser} />
 
             <div className="dashboard-container">
                 <div className="stats-section">
@@ -508,66 +428,72 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
                                 />
                             </div>
                         </div>
-                        <div className="pending-table-container">
-                            <table className="pending-table">
-                                <thead>
-                                    <tr>
-                                        <th onClick={() => handleSort('name')}>
-                                            Name <span className="sort-icon"><ArrowUpDown size={14} /></span>
-                                        </th>
-                                        <th onClick={() => handleSort('email')}>
-                                            Email <span className="sort-icon"><ArrowUpDown size={14} /></span>
-                                        </th>
-                                        <th onClick={() => handleSort('location')}>
-                                            Location <span className="sort-icon"><ArrowUpDown size={14} /></span>
-                                        </th>
-                                        <th onClick={() => handleSort('date')}>
-                                            Date Applied <span className="sort-icon"><ArrowUpDown size={14} /></span>
-                                        </th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredAccounts.length > 0 ? (
-                                        filteredAccounts.map(account => (
-                                            <tr key={account.id}>
-                                                <td>{account.name}</td>
-                                                <td>{account.email}</td>
-                                                <td>{account.location}</td>
-                                                <td>{formatDate(account.date)}</td>
-                                                <td className="action-buttons">
-                                                    <button 
-                                                        className="action-btn view-btn"
-                                                        title="View Details"
-                                                        onClick={() => handleViewDetails(account)}
-                                                    >
-                                                        <Eye size={18} />
-                                                    </button>
-                                                    <button 
-                                                        className="action-btn approve-btn" 
-                                                        onClick={() => handleAccountAction(account.id, 'approve')}
-                                                        title="Approve Account"
-                                                    >
-                                                        <CheckCircle size={18} />
-                                                    </button>
-                                                    <button 
-                                                        className="action-btn reject-btn"
-                                                        onClick={() => handleAccountAction(account.id, 'reject')}
-                                                        title="Reject Account"
-                                                    >
-                                                        <XCircle size={18} />
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    ) : (
+                        {loading ? (
+                            <div className="loading">Loading accounts...</div>
+                        ) : error ? (
+                            <div className="error">{error}</div>
+                        ) : (
+                            <div className="pending-table-container">
+                                <table className="pending-table">
+                                    <thead>
                                         <tr>
-                                            <td colSpan="5" className="no-results">No pending accounts found</td>
+                                            <th onClick={() => handleSort('fullName')}>
+                                                Name <span className="sort-icon"><ArrowUpDown size={14} /></span>
+                                            </th>
+                                            <th onClick={() => handleSort('emailAddress')}>
+                                                Email <span className="sort-icon"><ArrowUpDown size={14} /></span>
+                                            </th>
+                                            <th onClick={() => handleSort('location')}>
+                                                Location <span className="sort-icon"><ArrowUpDown size={14} /></span>
+                                            </th>
+                                            <th onClick={() => handleSort('userCreated')}>
+                                                Date Applied <span className="sort-icon"><ArrowUpDown size={14} /></span>
+                                            </th>
+                                            <th>Actions</th>
                                         </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+                                    </thead>
+                                    <tbody>
+                                        {filteredAccounts.length > 0 ? (
+                                            filteredAccounts.map(account => (
+                                                <tr key={account.uid}>
+                                                    <td>{account.fullName}</td>
+                                                    <td>{account.emailAddress}</td>
+                                                    <td>{account.location}</td>
+                                                    <td>{formatDate(account.userCreated)}</td>
+                                                    <td className="action-buttons">
+                                                        <button 
+                                                            className="action-btn view-btn"
+                                                            title="View Details"
+                                                            onClick={() => handleViewDetails(account)}
+                                                        >
+                                                            <Eye size={18} />
+                                                        </button>
+                                                        <button 
+                                                            className="action-btn approve-btn" 
+                                                            onClick={() => handleAccountAction(account.uid, 'approve')}
+                                                            title="Approve Account"
+                                                        >
+                                                            <CheckCircle size={18} />
+                                                        </button>
+                                                        <button 
+                                                            className="action-btn reject-btn"
+                                                            onClick={() => handleAccountAction(account.uid, 'reject')}
+                                                            title="Reject Account"
+                                                        >
+                                                            <XCircle size={18} />
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="5" className="no-results">No pending accounts found</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -587,7 +513,7 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
                                     <User size={40} />
                                 </div>
                                 <div className="account-title">
-                                    <h3>{selectedAccount.name}</h3>
+                                    <h3>{selectedAccount.fullName}</h3>
                                     <p className="account-subtitle">{selectedAccount.farmType} Hog Raiser • {selectedAccount.experience} Experience</p>
                                 </div>
                             </div>
@@ -596,11 +522,11 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
                                 <h4>Contact Information</h4>
                                 <div className="detail-item">
                                     <Mail size={16} />
-                                    <span>{selectedAccount.email}</span>
+                                    <span>{selectedAccount.emailAddress}</span>
                                 </div>
                                 <div className="detail-item">
                                     <Phone size={16} />
-                                    <span>{selectedAccount.phone}</span>
+                                    <span>{selectedAccount.contactNumber}</span>
                                 </div>
                                 <div className="detail-item">
                                     <Home size={16} />
@@ -612,7 +538,7 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
                                 </div>
                                 <div className="detail-item">
                                     <Calendar size={16} />
-                                    <span>Applied on {formatDate(selectedAccount.date)}</span>
+                                    <span>Applied on {formatDate(selectedAccount.userCreated)}</span>
                                 </div>
                             </div>
 
@@ -666,7 +592,7 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
                                 <button 
                                     className="btn reject-btn" 
                                     onClick={() => {
-                                        handleAccountAction(selectedAccount.id, 'reject');
+                                        handleAccountAction(selectedAccount.uid, 'reject');
                                     }}
                                 >
                                     <XCircle size={16} />
@@ -675,7 +601,7 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
                                 <button 
                                     className="btn approve-btn" 
                                     onClick={() => {
-                                        handleAccountAction(selectedAccount.id, 'approve');
+                                        handleAccountAction(selectedAccount.uid, 'approve');
                                     }}
                                 >
                                     <CheckCircle size={16} />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { BiNotification } from "react-icons/bi";
 import { FaRegClipboard } from "react-icons/fa";
@@ -22,6 +22,7 @@ const Navbar = ({ darkMode, setDarkMode, currentUser, isHomePage = false }) => {
     const [selectedNotification, setSelectedNotification] = useState(null);
     const dropdownRef = useRef(null);
     const notificationRef = useRef(null);
+    const navigate = useNavigate();
 
     // Using a state to manage user data that might be modified
     const [userData, setUserData] = useState({
@@ -30,6 +31,7 @@ const Navbar = ({ darkMode, setDarkMode, currentUser, isHomePage = false }) => {
         email: currentUser?.email || 'john.doe@example.com',
         phone: currentUser?.phone || '(555) 123-4567',
         profilePicture: currentUser?.profilePicture || null,
+        accountType: currentUser?.accountType || 'Hog Owner', // Use accountType for role
         emailVerified: true,
         phoneVerified: true
     });
@@ -43,6 +45,34 @@ const Navbar = ({ darkMode, setDarkMode, currentUser, isHomePage = false }) => {
         { id: 5, title: "Appointment Request", message: "Lisa Wilson has requested an appointment for hog health check on April 18th.", date: "2025-04-08", read: false }
     ]);
 
+    // DEBUG: Log userData to verify what is being used for initials
+    useEffect(() => {
+        console.log('Navbar userData:', userData);
+    }, [userData]);
+
+    // Helper to get user initials (works for all roles)
+    const getUserInitials = (user) => {
+        if (!user) return '';
+        const first = (user.firstName && user.firstName.trim().length > 0) ? user.firstName.trim().charAt(0).toUpperCase() : '';
+        const last = (user.lastName && user.lastName.trim().length > 0) ? user.lastName.trim().charAt(0).toUpperCase() : '';
+        if (first || last) return first + last;
+        // Fallback: try email or username
+        if (user.email && user.email.length > 0) return user.email.charAt(0).toUpperCase();
+        if (user.username && user.username.length > 0) return user.username.charAt(0).toUpperCase();
+        return '?'; // Show '?' if truly no info
+    };
+
+    // Helper to get full name (works for all roles)
+    const getFullName = (user) => {
+        if (!user) return '';
+        if (user.firstName && user.lastName) return `${user.firstName} ${user.lastName}`;
+        if (user.firstName) return user.firstName;
+        if (user.lastName) return user.lastName;
+        if (user.email) return user.email;
+        if (user.username) return user.username;
+        return '';
+    };
+
     const handleAccountSettings = () => {
         setAccountModalOpen(true);
         setDropdownOpen(false);
@@ -54,10 +84,9 @@ const Navbar = ({ darkMode, setDarkMode, currentUser, isHomePage = false }) => {
     };
 
     const handleLogout = () => {
-        console.log("User logged out");
         localStorage.removeItem('authToken');
         localStorage.removeItem('userData');
-        window.location.href = '/login';
+        navigate('/login');
     };
 
     const updateUserData = (newData) => {
@@ -115,9 +144,35 @@ const Navbar = ({ darkMode, setDarkMode, currentUser, isHomePage = false }) => {
         };
     }, []);
 
+    useEffect(() => {
+        if (currentUser) {
+            // Normalize role for compatibility
+            let normalizedAccountType = currentUser.accountType;
+            if (!normalizedAccountType && currentUser.role) {
+                if (currentUser.role.toLowerCase() === 'employee') {
+                    normalizedAccountType = 'Employee';
+                } else if (currentUser.role.toLowerCase() === 'hog owner' || currentUser.role.toLowerCase() === 'user') {
+                    normalizedAccountType = 'Hog Owner';
+                } else {
+                    normalizedAccountType = currentUser.role;
+                }
+            }
+            setUserData({
+                firstName: currentUser.firstName || '',
+                lastName: currentUser.lastName || '',
+                email: currentUser.email || '',
+                phone: currentUser.phone || '',
+                profilePicture: currentUser.profilePicture || null,
+                accountType: normalizedAccountType || 'Hog Owner',
+                emailVerified: currentUser.emailVerified ?? true,
+                phoneVerified: currentUser.phoneVerified ?? true
+            });
+        }
+    }, [currentUser]);
+
     // Full name based on userData which might be updated
-    const fullName = `${userData.firstName} ${userData.lastName}`;
-    const userRole = 'Employee Dashboard';
+    const fullName = getFullName(userData);
+    const userRole = userData.accountType === 'Employee' ? 'Employee Dashboard' : 'Hog Owner Dashboard';
 
     return (
         <div className={darkMode ? "dark-mode" : ""}>
@@ -135,7 +190,11 @@ const Navbar = ({ darkMode, setDarkMode, currentUser, isHomePage = false }) => {
                             </>
                         ) : (
                             <>
-                            EMPLOYEE<br />DASHBOARD
+                            {userData.accountType === 'Employee' ? (
+                                <>EMPLOYEE<br />DASHBOARD</>
+                            ) : (
+                                <>HOG OWNER<br />DASHBOARD</>
+                            )}
                             </>
                         )}
                     </div>
@@ -163,19 +222,21 @@ const Navbar = ({ darkMode, setDarkMode, currentUser, isHomePage = false }) => {
                                 <img src={userData.profilePicture} alt="Profile" className="profile-pic-small" />
                             ) : (
                                 <div className="profile-initials">
-                                    {userData.firstName.charAt(0)}{userData.lastName.charAt(0)}
+                                    {getUserInitials(userData)}
                                 </div>
                             )}
                             
                             {dropdownOpen && (
                                 <div className="profile-dropdown">
                                     <div className="profile-header">
-                                        <span className="dropdown-user-name">{fullName}</span>
-                                        <span className="dropdown-user-role">{userRole}</span>
+                                        <div className="dropdown-user-name">{fullName}</div>
+                                        <div className="dropdown-user-role">{userRole}</div>
                                     </div>
                                     <div className="dropdown-divider"></div>
                                     <button onClick={handleAccountSettings}><IoSettingsOutline className="dropdown-icon" /> Account Settings</button>
-                                    <button onClick={handleViewOwners}><FaRegClipboard className="dropdown-icon" />View Hog Owners</button>
+                                    {userData.accountType === 'Employee' && (
+                                        <button onClick={handleViewOwners}><FaRegClipboard className="dropdown-icon" />View Hog Owners</button>
+                                    )}
                                     <button onClick={handleLogout}><FiLogOut className="dropdown-icon" /> Logout</button>
                                 </div>
                             )}
@@ -225,7 +286,7 @@ const Navbar = ({ darkMode, setDarkMode, currentUser, isHomePage = false }) => {
             <AccountSettingsModal 
                 isOpen={accountModalOpen}
                 onClose={() => setAccountModalOpen(false)} 
-                currentUser={userData}
+                user={userData}
                 updateUserData={updateUserData}
             />
 

@@ -109,6 +109,24 @@ const App = () => {
                         </ProtectedRoute>
                     } />
                     
+                    <Route path="/dashboard" element={
+                        <ProtectedRoute>
+                            <UserDashboard darkMode={darkMode} setDarkMode={setDarkMode} currentUser={currentUser} />
+                        </ProtectedRoute>
+                    } />
+                    
+                    <Route path="/employee-dashboard" element={
+                        <ProtectedRoute>
+                            <EmployeeDashboard 
+                                darkMode={darkMode} 
+                                setDarkMode={setDarkMode} 
+                                isOpen={isOpen} 
+                                setIsOpen={setIsOpen}
+                                currentUser={currentUser}
+                            />
+                        </ProtectedRoute>
+                    } />
+                    
                     {/* Add routes for other components, passing currentUser */}
                     <Route path="/asfmap" element={
                         <ProtectedRoute>

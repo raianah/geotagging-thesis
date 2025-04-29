@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { register, getProfile } from "../services/api";
 import "../css/RegistrationCSS.css";
 import logo from '../img/logo.png';
 
@@ -23,6 +24,8 @@ export default function RegistrationForm() {
 	const [hogInputType, setHogInputType] = useState("input"); // "input" or "dropdown"
 	const [showCamera, setShowCamera] = useState(false);
 	const [cameraReady, setCameraReady] = useState(false);
+	const [loading, setLoading] = useState(false);
+	const [success, setSuccess] = useState(null);
 	
 	const videoRef = useRef(null);
 	const canvasRef = useRef(null);
@@ -367,50 +370,30 @@ export default function RegistrationForm() {
 
 	const handleRegister = async (e) => {
 		e.preventDefault();
-		
 		if (!validateForm()) return;
-		
-		// Create FormData for file uploads
-		const formDataObj = new FormData();
-		formDataObj.append("firstName", formData.firstName);
-		formDataObj.append("lastName", formData.lastName);
-		formDataObj.append("phone", formData.phone);
-		formDataObj.append("email", formData.email);
-		formDataObj.append("location", formData.location);
-		formDataObj.append("totalHogs", formData.totalHogs);
-		formDataObj.append("validId", formData.validId);
-		formDataObj.append("acceptedPrivacyPolicy", formData.acceptedPrivacyPolicy);
-		
-		// Convert locationImage from data URL to blob if it exists
-		if (formData.locationImage) {
-			const fetchRes = await fetch(formData.locationImage);
-			const blob = await fetchRes.blob();
-			formDataObj.append("locationImage", blob, "location-image.jpg");
-		}
-		
-		formData.hogPhotos.forEach((photo, index) => {
-			formDataObj.append(`hogPhoto${index}`, photo);
-		});
-		
+		setLoading(true);
+		setErrors({});
+		setSuccess(null);
 		try {
-			const response = await fetch("http://localhost:3000/register", {
-				method: "POST",
-				body: formDataObj,
+			await register({
+				firstName: formData.firstName,
+				lastName: formData.lastName,
+				email: formData.email,
+				phone: formData.phone,
+				location: formData.location,
+				totalHogs: formData.totalHogs
 			});
-			
-			const data = await response.json();
-			if (response.ok) {
-				alert("Registration successful!");
-				navigate("/dashboard");
-			} else {
-				alert(data.error || "Registration failed.");
-			}
+			const profile = await getProfile();
+			localStorage.setItem("profile", JSON.stringify(profile));
+			setLoading(false);
+			setSuccess("Registration successful! Redirecting to login...");
+			setTimeout(() => navigate("/login"), 2000);
 		} catch (error) {
-			console.error("Error:", error);
-			alert("Something went wrong. Please try again.");
+			setLoading(false);
+			setErrors({ form: error.message || "Registration failed. Please try again." });
 		}
 	};
-
+	
 	// Ensure phone always starts with +639
 	useEffect(() => {
 		if (!formData.phone.startsWith('+639')) {
@@ -711,7 +694,9 @@ export default function RegistrationForm() {
 								)}
 							</div>
 
-							<button type="submit" className="register-btn">Register</button>
+							{errors.form && <span className="error-message">{errors.form}</span>}
+							{success && <span className="success-message">{success}</span>}
+							<button type="submit" className="register-btn" disabled={loading}>{loading ? "Registering..." : "Register"}</button>
 						</form>
 					</div>
 				)}

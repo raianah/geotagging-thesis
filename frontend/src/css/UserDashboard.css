@@ -142,7 +142,7 @@
 
 .info-label {
     font-weight: 500;
-    color: var(--text-light);
+    color: var(--text-dark);
     transition: color 0.3s ease;
 }
 
