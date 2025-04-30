@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "./Navbar";
 import ASFMap from "./ASFMap";
+import AddNotification from "./AddNotification";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { ChevronLeft, ChevronRight, Search, ArrowUpDown, CheckCircle, XCircle, Eye, User, Mail, MapPin, Calendar, Phone, Home, Clipboard, X } from "lucide-react";
 import { getAccounts, getDashboardData, getPendingAccounts, updateAccountStatus } from "../services/api";
@@ -360,6 +361,8 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
                                 </div>
                             </button>
                         </div>
+
+                        <AddNotification />
                     </div>
                 </div>
             </div>

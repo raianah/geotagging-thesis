@@ -21,7 +21,7 @@ export async function apiRequest(endpoint, method = "GET", data = null) {
     if (data) {
         options.body = JSON.stringify(data);
     }
-    const url = endpoint.startsWith("http") ? endpoint : API_BASE + endpoint;
+    const url = new URL(endpoint.startsWith("http://") || endpoint.startsWith("https://") ? endpoint : `${API_BASE}${endpoint}`);
     const response = await fetch(url, options);
     if (!response.ok) {
         const errorText = await response.text();
