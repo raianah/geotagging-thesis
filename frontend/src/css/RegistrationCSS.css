@@ -75,12 +75,12 @@ body, html {
     display: flex;
     flex-direction: column;
     gap: 5px;
+    color: white;
 }
 
-.input-group label {
+.input-group-reg label {
     font-weight: 500;
     font-size: 14px;
-    color: #333;
 }
 
 .input-wrapper {
@@ -150,7 +150,7 @@ input:focus, select:focus {
 }
 
 .location-btn.geocam {
-    background-color: #ff8585;
+    background-color: #ff6b6b;
 }
 
 .location-btn:hover {
@@ -244,7 +244,7 @@ input:focus, select:focus {
 
 .location-image {
     width: 100%;
-    max-height: 200px;
+    max-height: 400px;
     object-fit: cover;
     border-radius: 6px;
 }
@@ -291,6 +291,7 @@ input:focus, select:focus {
     color: white;
     padding: 12px 15px;
     border-radius: 8px;
+    font-size: 14px;
     cursor: pointer;
     font-weight: 500;
     text-align: center;
@@ -338,10 +339,9 @@ input:focus, select:focus {
     background-color: #ff6b6b;
     color: white;
     border: none;
-    padding: 5px 10px;
+    padding: 10px;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 12px;
     transition: background-color 0.3s;
 }
 
@@ -455,5 +455,216 @@ input:focus, select:focus {
 
     .toggle-btn {
         text-align: center;
+    }
+}
+
+.id-container {
+    margin-bottom: 10px;
+}
+
+.id-select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+
+.id-select:focus {
+    outline: none;
+    border-color: #ff6b6b;
+    box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.1);
+}
+
+/* Preview image styles */
+.image-preview-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.id-preview-image, .preview-image {
+    width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #eee;
+}
+
+.photos-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.photo-preview {
+    position: relative;
+    width: calc(33.333% - 7px);
+    min-width: 100px;
+}
+
+.remove-preview-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: rgba(255, 107, 107, 0.8);
+    color: white;
+    border: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.remove-preview-btn:hover {
+    background-color: #ff5252;
+}
+
+/* Hog Management styles */
+.hog-management-section {
+    border: 1px solid #eee;
+    border-radius: 10px;
+    padding: .5px 15px 15px;
+    background-color: #fcfcfc;
+}
+
+.hog-management-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+
+.add-hog-btn {
+    background-color: #ff6b6b;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.3s;
+    display: flex;
+    align-items: center;
+}
+
+.add-hog-btn:hover {
+    background-color: #ff5252;
+}
+
+.no-hogs-message {
+    background-color: #f9f9f9;
+    border: 1px dashed #ddd;
+    padding: 20px;
+    text-align: center;
+    border-radius: 8px;
+    color: #888;
+}
+
+.hog-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.hog-entry {
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 15px;
+    background-color: white;
+}
+
+.hog-entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+}
+
+.hog-entry-header h4 {
+    margin: 0;
+    color: #ff6b6b;
+    font-size: 16px;
+}
+
+.hog-entry-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.hog-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+/* Gender selection styles */
+.gender-options {
+    display: flex;
+    gap: 15px;
+}
+
+.radio-container {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.radio-container input[type="radio"] {
+    margin-right: 5px;
+    cursor: pointer;
+}
+
+.radio-label {
+    font-size: 14px;
+}
+
+/* Error display for hogs */
+.hog-errors {
+    margin-top: 10px;
+}
+
+.hog-error {
+    background-color: rgba(255, 107, 107, 0.1);
+    border-left: 3px solid #ff6b6b;
+    padding: 10px;
+    margin-bottom: 5px;
+    border-radius: 0 5px 5px 0;
+}
+
+.hog-error p {
+    margin: 0 0 5px;
+    font-weight: 500;
+    color: #ff6b6b;
+}
+
+.hog-error ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.hog-error li {
+    color: #ff6b6b;
+    font-size: 12px;
+}
+
+/* Mobile responsive styles for hog section */
+@media (max-width: 768px) {
+    .hog-entry-form {
+        grid-template-columns: 1fr;
+    }
+    
+    .photo-preview {
+        width: calc(50% - 5px);
     }
 }

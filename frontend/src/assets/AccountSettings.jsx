@@ -1,3 +1,4 @@
+import axios from "axios";
 import React, { useState, useRef, useEffect } from "react";
 import { IoMdClose } from "react-icons/io";
 import { MdVerified, MdErrorOutline } from "react-icons/md";
@@ -367,14 +368,27 @@ const AccountSettings = ({ isOpen, onClose, user }) => {
         setOriginalImage(null);
     };
 
-    const handleVerifyEmail = () => {
-        // Generate 6-digit code
-        const code = Math.floor(100000 + Math.random() * 900000).toString();
-        setEmailVerificationCode(code);
-        setEmailToVerify(profileData.email);
-        setShowEmailVerificationInput(true);
-        setIsEmailVerified(false);
-        alert(`Verification code for email (${profileData.email}): ${code}`); // In real app, send via email
+    const handleVerifyEmail = async () => {
+        try {
+            // Generate 6-digit code
+            const code = Math.floor(100000 + Math.random() * 900000).toString();
+            setEmailVerificationCode(code);
+            setEmailToVerify(profileData.email);
+            setShowEmailVerificationInput(true);
+            setIsEmailVerified(false);
+            
+            // Call your backend API to send the OTP via email
+            await axios.post('/api/send-email-otp', {
+                email: profileData.email,
+                code: code
+            });
+            
+            // Success notification
+            setSuccess("Verification code sent to your email.");
+        } catch (error) {
+            setError("Failed to send verification code. Please try again.");
+            console.error("Email OTP sending error:", error);
+        }
     };
 
     const handleEmailVerificationSubmit = () => {
@@ -390,14 +404,28 @@ const AccountSettings = ({ isOpen, onClose, user }) => {
         }
     };
 
-    const handleVerifyPhone = () => {
-        // Generate 6-digit code
-        const code = Math.floor(100000 + Math.random() * 900000).toString();
-        setPhoneVerificationCode(code);
-        setPhoneToVerify(profileData.phone);
-        setShowPhoneVerificationInput(true);
-        setIsPhoneVerified(false);
-        alert(`Verification code for phone (${profileData.phone}): ${code}`); // In real app, send via SMS
+    const handleVerifyPhone = async () => {
+        try {
+            // Generate 6-digit code
+            const code = Math.floor(100000 + Math.random() * 900000).toString();
+            setPhoneVerificationCode(code);
+            setPhoneToVerify(profileData.phone);
+            setShowPhoneVerificationInput(true);
+            setIsPhoneVerified(false);
+            
+            // Call the Twilio API to send the OTP via SMS
+            // This would typically be done through your backend to protect API keys
+            await axios.post('/api/send-otp', {
+                phone: profileData.phone,
+                code: code
+            });
+            
+            // Success notification
+            setSuccess("Verification code sent to your phone.");
+        } catch (error) {
+            setError("Failed to send verification code. Please try again.");
+            console.error("OTP sending error:", error);
+        }
     };
 
     const handlePhoneVerificationSubmit = () => {
@@ -549,7 +577,7 @@ const AccountSettings = ({ isOpen, onClose, user }) => {
                                 </div>
                                 
                                 <p className="crop-info">
-                                Drag to position your image and use the slider or mouse wheel to zoom. The area inside the circle will become your profile picture.
+                                    Drag to position your image and use the slider or mouse wheel to zoom. The area inside the circle will become your profile picture.
                                 </p>
                                 
                                 <div className="crop-buttons">
@@ -667,6 +695,20 @@ const AccountSettings = ({ isOpen, onClose, user }) => {
                                         <button onClick={handlePhoneVerificationSubmit}>Submit</button>
                                     </div>
                                 )}
+                                </div>
+
+                                <div className="delete-account-section">
+                                    <button 
+                                        className="delete-account-button" 
+                                        onClick={() => {
+                                        if(window.confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+                                            // Call delete account API here
+                                            alert("Account deletion requested. You will receive a confirmation email.");
+                                        }
+                                        }}
+                                    >
+                                        Delete My Account
+                                    </button>
                                 </div>
 
                                 <div className="form-actions">

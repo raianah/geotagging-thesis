@@ -12,8 +12,9 @@ export default function RegistrationForm() {
 		phone: "",
 		location: "",
 		locationImage: null,
-		totalHogs: "1",
+		validIdType: "",
 		validId: null,
+		hogList: [],
 		hogPhotos: [],
 		acceptedPrivacyPolicy: false
 	});
@@ -70,17 +71,55 @@ export default function RegistrationForm() {
 		}
 	};
 	
-	const handleTotalHogsChange = (e) => {
-		const value = e.target.value;
-		// Only allow positive numbers up to 999
-		if (value === "" || (/^\d+$/.test(value) && parseInt(value) > 0 && parseInt(value) <= 999)) {
-			setFormData({ ...formData, totalHogs: value });
-		}
+	const isLocationInBalayan = (locationString) => {
+		// Convert to lowercase for case-insensitive comparison
+		const locationLower = locationString.toLowerCase();
+		
+		// Check if the location contains "balayan" and "batangas"
+		const containsBalayan = locationLower.includes("balayan");
+		const containsBatangas = locationLower.includes("batangas");
+		
+		return containsBalayan && containsBatangas;
 	};
 
 	const validateEmail = (email) => {
 		const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 		return re.test(email);
+	};
+
+	const checkCoordinatesInBalayan = async (latitude, longitude) => {
+		try {
+			// Use a more specific geocoding query with parameters to get detailed result
+			const response = await fetch(
+				`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
+			);
+			const data = await response.json();
+			
+			// Check address details specifically for Balayan and Batangas
+			if (data.address) {
+				const city = (data.address.city || "").toLowerCase();
+				const municipality = (data.address.municipality || "").toLowerCase();
+				const county = (data.address.county || "").toLowerCase();
+				const state = (data.address.state || "").toLowerCase();
+				
+				// Check if any of these fields contain "balayan"
+				const isBalayan = 
+				city.includes("balayan") || 
+				municipality.includes("balayan") || 
+				county.includes("balayan");
+				
+				// Check if state/province is Batangas
+				const isBatangas = state.includes("batangas");
+				
+				return isBalayan && isBatangas;
+			}
+			
+			// If we can't determine from address details, use the display name
+			return isLocationInBalayan(data.display_name || "");
+			} catch (error) {
+			console.error("Error checking coordinates:", error);
+			return false;
+		}
 	};
 
 	const handleGetLocation = () => {
@@ -89,30 +128,58 @@ export default function RegistrationForm() {
 		
 		if (navigator.geolocation) {
 			navigator.geolocation.getCurrentPosition(
-				(position) => {
-					const { latitude, longitude } = position.coords;
+				async (position) => {
+				const { latitude, longitude } = position.coords;
+				
+				try {
+					// First check if the coordinates are in Balayan
+					const isInBalayan = await checkCoordinatesInBalayan(latitude, longitude);
 					
-					// Use reverse geocoding to get address (simplified for example)
-					// In production, you would use a service like Google Maps API
-					fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
-						.then(response => response.json())
-						.then(data => {
-							const location = data.display_name || `Lat: ${latitude}, Long: ${longitude}`;
-							setFormData({ ...formData, location });
-							setLocationLoading(false);
-						})
-						.catch(error => {
-							setLocationError("Failed to get address. Using coordinates.");
-							setFormData({ ...formData, location: `Lat: ${latitude}, Long: ${longitude}` });
-							setLocationLoading(false);
-						});
+					// Use reverse geocoding to get address
+					const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+					const data = await response.json();
+					const location = data.display_name || `Lat: ${latitude}, Long: ${longitude}`;
+					
+					if (isInBalayan) {
+					setFormData({ ...formData, location });
+					setLocationLoading(false);
+					// Clear any previous errors
+					setErrors({...errors, location: ""});
+					} else {
+					setLocationError("Registration is only available for locations in Balayan, Batangas.");
+					setLocationLoading(false);
+					}
+				} catch (error) {
+					setLocationError("Failed to get address. Using coordinates.");
+					const location = `Lat: ${latitude}, Long: ${longitude}`;
+					
+					// Even with coordinates, we should try to validate the area
+					setFormData({ ...formData, location });
+					setLocationLoading(false);
+					setErrors({...errors, location: "We couldn't verify if this location is in Balayan, Batangas."});
+				}
 				},
 				(error) => {
-					setLocationError("Failed to get location. Please try again.");
-					setLocationLoading(false);
+				let errorMessage = "Failed to get location. Please try again.";
+				
+				// Provide more specific error messages based on the error code
+				switch(error.code) {
+					case error.PERMISSION_DENIED:
+					errorMessage = "Location access denied. Please enable location services.";
+					break;
+					case error.POSITION_UNAVAILABLE:
+					errorMessage = "Location information is unavailable. Please try again later.";
+					break;
+					case error.TIMEOUT:
+					errorMessage = "Location request timed out. Please try again.";
+					break;
+				}
+				
+				setLocationError(errorMessage);
+				setLocationLoading(false);
 				}
 			);
-		} else {
+			} else {
 			setLocationError("Geolocation is not supported by this browser.");
 			setLocationLoading(false);
 		}
@@ -211,7 +278,7 @@ export default function RegistrationForm() {
 		
 		// Get current position
 		navigator.geolocation.getCurrentPosition(
-			(position) => {
+		  	async (position) => {
 				const { latitude, longitude } = position.coords;
 				
 				// Capture image from video stream
@@ -219,58 +286,81 @@ export default function RegistrationForm() {
 				const video = videoRef.current;
 				
 				if (canvas && video) {
-					console.log("Capturing image from video");
-					console.log("Video dimensions:", video.videoWidth, video.videoHeight);
-					
-					// Set canvas dimensions to match video
+				try {
+					// Draw the video frame to the canvas
+					const context = canvas.getContext('2d');
 					canvas.width = video.videoWidth || 640;
 					canvas.height = video.videoHeight || 480;
+					context.drawImage(video, 0, 0, canvas.width, canvas.height);
+					
+					// Convert canvas to image data URL
+					const imageDataUrl = canvas.toDataURL('image/jpeg');
 					
 					try {
-						// Draw the video frame to the canvas
-						const context = canvas.getContext('2d');
-						context.drawImage(video, 0, 0, canvas.width, canvas.height);
-						
-						// Convert canvas to image data URL
-						const imageDataUrl = canvas.toDataURL('image/jpeg');
-						console.log("Image captured successfully");
-						
-						// Use reverse geocoding to get address
-						fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
-							.then(response => response.json())
-							.then(data => {
-								const location = data.display_name || `Lat: ${latitude}, Long: ${longitude}`;
-								setFormData(prev => ({ 
-									...prev, 
-									location, 
-									locationImage: imageDataUrl 
-								}));
-								setLocationLoading(false);
-								stopCamera();
-							})
-							.catch(error => {
-								setLocationError("Failed to get address. Using coordinates.");
-								setFormData(prev => ({ 
-									...prev, 
-									location: `Lat: ${latitude}, Long: ${longitude}`,
-									locationImage: imageDataUrl
-								}));
-								setLocationLoading(false);
-								stopCamera();
-							});
-					} catch (drawError) {
-						console.error("Error drawing to canvas:", drawError);
-						setLocationError("Failed to capture image: " + drawError.message);
+					// Check if location is in Balayan
+					const isInBalayan = await checkCoordinatesInBalayan(latitude, longitude);
+					
+					// Get address for display
+					const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+					const data = await response.json();
+					const location = data.display_name || `Lat: ${latitude}, Long: ${longitude}`;
+					
+					if (isInBalayan) {
+						setFormData(prev => ({ 
+						...prev, 
+						location, 
+						locationImage: imageDataUrl 
+						}));
 						setLocationLoading(false);
+						stopCamera();
+						// Clear any previous errors
+						setErrors({...errors, location: ""});
+					} else {
+						setLocationError("Registration is only available for locations in Balayan, Batangas.");
+						setLocationLoading(false);
+						stopCamera();
 					}
-				} else {
-					console.error("Canvas or video element not available");
-					setLocationError("Failed to capture: Canvas or video element not available");
+					} catch (error) {
+					setLocationError("Failed to get address. Using coordinates.");
+					const location = `Lat: ${latitude}, Long: ${longitude}`;
+					
+					setFormData(prev => ({ 
+						...prev, 
+						location,
+						locationImage: imageDataUrl
+					}));
 					setLocationLoading(false);
+					stopCamera();
+					setErrors({...errors, location: "We couldn't verify if this location is in Balayan, Batangas."});
+					}
+				} catch (drawError) {
+					console.error("Error drawing to canvas:", drawError);
+					setLocationError("Failed to capture image: " + drawError.message);
+					setLocationLoading(false);
+				}
+				} else {
+				console.error("Canvas or video element not available");
+				setLocationError("Failed to capture: Canvas or video element not available");
+				setLocationLoading(false);
 				}
 			},
 			(error) => {
-				setLocationError("Failed to get location. Please try again.");
+				let errorMessage = "Failed to get location. Please try again.";
+				
+				// Provide more specific error messages based on the error code
+				switch(error.code) {
+				case error.PERMISSION_DENIED:
+					errorMessage = "Location access denied. Please enable location services.";
+					break;
+				case error.POSITION_UNAVAILABLE:
+					errorMessage = "Location information is unavailable. Please try again later.";
+					break;
+				case error.TIMEOUT:
+					errorMessage = "Location request timed out. Please try again.";
+					break;
+				}
+				
+				setLocationError(errorMessage);
 				setLocationLoading(false);
 				stopCamera();
 			}
@@ -302,37 +392,167 @@ export default function RegistrationForm() {
 		}
 	};
 
-	const handleHogPhotosUpload = (e) => {
-		const files = Array.from(e.target.files);
-		
-		// Limit to 3 photos
-		if (formData.hogPhotos.length + files.length > 3) {
-			setErrors({...errors, hogPhotos: "Maximum 3 photos allowed"});
-			return;
-		}
-		
-		// Validate files
-		const invalidFiles = files.filter(file => !file.type.match('image.*'));
-		if (invalidFiles.length > 0) {
-			setErrors({...errors, hogPhotos: "Please upload only image files"});
-			return;
-		}
-		
-		// Check file sizes
-		const oversizedFiles = files.filter(file => file.size > 5 * 1024 * 1024);
-		if (oversizedFiles.length > 0) {
-			setErrors({...errors, hogPhotos: "File size should be less than 5MB"});
-			return;
-		}
-		
-		setFormData({ ...formData, hogPhotos: [...formData.hogPhotos, ...files] });
-		setErrors({...errors, hogPhotos: ""});
+	const handleAddHog = () => {
+		setFormData(prev => ({
+			...prev,
+			hogList: [
+				...prev.hogList,
+				{
+					breed: "",
+					gender: "",
+					birthdate: "",
+					photos: []
+				}
+			]
+		}));
 	};
 
-	const removeHogPhoto = (index) => {
-		const updatedPhotos = [...formData.hogPhotos];
-		updatedPhotos.splice(index, 1);
-		setFormData({ ...formData, hogPhotos: updatedPhotos });
+	const handleHogChange = (index, field, value) => {
+		const updatedHogs = [...formData.hogList];
+		updatedHogs[index] = { ...updatedHogs[index], [field]: value };
+		setFormData({ ...formData, hogList: updatedHogs });
+	};
+
+	const handleRemoveHog = (index) => {
+		const updatedHogs = [...formData.hogList];
+		updatedHogs.splice(index, 1);
+		setFormData({ ...formData, hogList: updatedHogs });
+	};
+
+	const HogEntry = ({ index, hog, onChange, onRemove }) => {
+		return (
+			<div className="hog-entry">
+				<div className="hog-entry-header">
+					<h4>Hog #{index + 1}</h4>
+					<button 
+						type="button" 
+						className="remove-btn"
+						onClick={() => onRemove(index)}
+					>
+						Remove
+					</button>
+				</div>
+				<div className="hog-entry-form">
+					<div className="hog-field">
+						<label>Breed<span className="required">*</span></label>
+						<select 
+							name="breed" 
+							value={hog.breed} 
+							onChange={(e) => onChange(index, "breed", e.target.value)}
+							required
+						>
+							<option value="">Select Breed</option>
+							<option value="Native (Native Black)">Native (Native Black)</option>
+							<option value="Large White">Large White</option>
+							<option value="Landrace">Landrace</option>
+							<option value="Duroc">Duroc</option>
+							<option value="Hampshire">Hampshire</option>
+							<option value="Berkshire">Berkshire</option>
+							<option value="Pietrain">Pietrain</option>
+							<option value="Chester White">Chester White</option>
+							<option value="Crossbreed">Crossbreed</option>
+							<option value="Other">Other</option>
+						</select>
+					</div>
+					<div className="hog-field">
+						<label>Gender<span className="required">*</span></label>
+						<div style={{ display: 'flex', gap: '20px', marginTop: '5px' }}>
+							<div style={{ display: 'flex', alignItems: 'center' }}>
+							<input
+								type="radio"
+								id={`gender-male-${index}`}
+								name={`gender-${index}`}
+								value="male"
+								checked={hog.gender === "male"}
+								onChange={() => onChange(index, "gender", "male")}
+								style={{ marginRight: '8px', marginTop: '0', marginBottom: '0' }}
+							/>
+							<label 
+								htmlFor={`gender-male-${index}`}
+								style={{ margin: '0', fontSize: '14px', display: 'inline' }}
+							>
+								Male
+							</label>
+							</div>
+							<div style={{ display: 'flex', alignItems: 'center' }}>
+							<input
+								type="radio"
+								id={`gender-female-${index}`}
+								name={`gender-${index}`}
+								value="female"
+								checked={hog.gender === "female"}
+								onChange={() => onChange(index, "gender", "female")}
+								style={{ marginRight: '8px', marginTop: '0', marginBottom: '0' }}
+							/>
+							<label 
+								htmlFor={`gender-female-${index}`}
+								style={{ margin: '0', fontSize: '14px', display: 'inline' }}
+							>
+								Female
+							</label>
+							</div>
+						</div>
+					</div>
+					<div className="hog-field">
+						<label>Birthdate<span className="required">*</span></label>
+						<input
+							type="date"
+							value={hog.birthdate}
+							onChange={(e) => onChange(index, "birthdate", e.target.value)}
+							required
+							max={new Date().toISOString().split('T')[0]} // Cannot select future dates
+						/>
+					</div>
+					<div className="hog-field">
+						<label>Photos (Max 2)<span className="required">*</span></label>
+						<div className="file-upload-container">
+							<label className="file-upload-btn">
+								Upload Photos
+								<input 
+									type="file" 
+									accept="image/*" 
+									multiple 
+									onChange={(e) => {
+										const files = Array.from(e.target.files);
+										// Check if adding these would exceed 2 photos per hog
+										if (hog.photos.length + files.length > 2) {
+											alert("Maximum 2 photos per hog allowed");
+											return;
+										}
+										onChange(index, "photos", [...hog.photos, ...files]);
+									}} 
+									disabled={hog.photos.length >= 3}
+								/>
+							</label>
+							{hog.photos.length > 0 && (
+								<div className="photos-preview">
+									{hog.photos.map((photo, photoIndex) => (
+										<div key={photoIndex} className="photo-preview">
+											<img 
+												src={URL.createObjectURL(photo)} 
+												alt={`Hog ${index+1} photo ${photoIndex+1}`}
+												className="preview-image"
+											/>
+											<button 
+												type="button" 
+												className="remove-preview-btn"
+												onClick={() => {
+													const updatedPhotos = [...hog.photos];
+													updatedPhotos.splice(photoIndex, 1);
+													onChange(index, "photos", updatedPhotos);
+												}}
+											>
+												✕
+											</button>
+										</div>
+									))}
+								</div>
+							)}
+						</div>
+					</div>
+				</div>
+			</div>
+		);
 	};
 	
 	const removeLocationPhoto = () => {
@@ -346,7 +566,7 @@ export default function RegistrationForm() {
 		if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
 		
 		if (!formData.phone || formData.phone.length !== 13) {
-			newErrors.phone = "Phone number must be +639 followed by 9 digits";
+			newErrors.phone = "Phone number must be started with +639 followed by 9 digits";
 		}
 		
 		if (!formData.email) {
@@ -355,11 +575,41 @@ export default function RegistrationForm() {
 			newErrors.email = "Please enter a valid email address";
 		}
 		
-		if (!formData.location) newErrors.location = "Location is required";
-		if (!formData.totalHogs) newErrors.totalHogs = "Number of hogs is required";
-		if (!formData.validId) newErrors.validId = "Valid ID is required";
-		if (formData.hogPhotos.length === 0) newErrors.hogPhotos = "At least one hog photo is required";
-
+		if (!formData.location) {
+			newErrors.location = "Location is required";
+		} else if (!isLocationInBalayan(formData.location)) {
+			newErrors.location = "Only locations in Balayan, Batangas are eligible for registration";
+		}
+		
+		if (!formData.validIdType) {
+			newErrors.validIdType = "Please select an ID type";
+		}
+		
+		if (!formData.validId) {
+			newErrors.validId = "Valid ID is required";
+		}
+		
+		if (formData.hogList.length === 0) {
+			newErrors.hogList = "Please add at least one hog";
+		} else {
+			const hogErrors = [];
+			formData.hogList.forEach((hog, index) => {
+				const hogError = {};
+				if (!hog.breed) hogError.breed = "Breed is required";
+				if (!hog.gender) hogError.gender = "Gender is required";
+				if (!hog.birthdate) hogError.birthdate = "Birthdate is required";
+				if (hog.photos.length === 0) hogError.photos = "At least one photo is required";
+				
+				if (Object.keys(hogError).length > 0) {
+					hogErrors[index] = hogError;
+				}
+			});
+			
+			if (hogErrors.length > 0) {
+				newErrors.hogErrors = hogErrors;
+			}
+		}
+	
 		if (!formData.acceptedPrivacyPolicy) {
 			newErrors.acceptedPrivacyPolicy = "You must agree to the Privacy Policy";
 		}
@@ -476,7 +726,7 @@ export default function RegistrationForm() {
 						<p className="registration-subtitle">For hog raisers of Balayan, Batangas</p>
 						
 						<form className="registration-form" onSubmit={handleRegister}>
-							<div className="input-group">
+							<div className="input-group-reg">
 								<label>Name<span className="required">*</span></label>
 								<div className="name-container">
 									<div className="input-wrapper">
@@ -502,7 +752,7 @@ export default function RegistrationForm() {
 								</div>
 							</div>
 
-							<div className="input-group">
+							<div className="input-group-reg">
 								<label>Contact Number<span className="required">*</span></label>
 								<div className="input-wrapper">
 									<input 
@@ -516,7 +766,7 @@ export default function RegistrationForm() {
 								</div>
 							</div>
 
-							<div className="input-group">
+							<div className="input-group-reg">
 								<label>Email Address<span className="required">*</span></label>
 								<div className="input-wrapper">
 									<input 
@@ -530,7 +780,7 @@ export default function RegistrationForm() {
 								</div>
 							</div>
 
-							<div className="input-group">
+							<div className="input-group-reg">
 								<label>Location<span className="required">*</span></label>
 								<div className="location-container">
 									<div className="location-buttons">
@@ -579,51 +829,79 @@ export default function RegistrationForm() {
 								</div>
 							</div>
 
-							<div className="input-group">
-								<label>Total Number of Hogs<span className="required">*</span></label>
-								<div className="hog-input-container">
-									<div className="input-toggle">
-										<button 
-											type="button" 
-											className={`toggle-btn ${hogInputType === "input" ? "active" : ""}`}
-											onClick={() => setHogInputType("input")}
-										>
-											Manual
-										</button>
-										<button 
-											type="button" 
-											className={`toggle-btn ${hogInputType === "dropdown" ? "active" : ""}`}
-											onClick={() => setHogInputType("dropdown")}
-										>
-											Dropdown
-										</button>
-									</div>
-									
-									{hogInputType === "input" ? (
-										<input 
-											type="text"
-											name="totalHogs"
-											placeholder="Enter number of hogs"
-											value={formData.totalHogs}
-											onChange={handleTotalHogsChange}
-										/>
-									) : (
-										<select 
-											name="totalHogs" 
-											value={formData.totalHogs} 
-											onChange={handleChange}
-										>
-											{[...Array(100)].map((_, i) => (
-												<option key={i+1} value={i+1}>{i+1}</option>
-											))}
-										</select>
-									)}
-									{errors.totalHogs && <span className="error-message">{errors.totalHogs}</span>}
+							<div className="input-group-reg hog-management-section">
+								<div className="hog-management-header">
+									<label>Hogs<span className="required">*</span></label>
+									<button 
+										type="button" 
+										className="add-hog-btn"
+										onClick={handleAddHog}
+									>
+										+ Add Hog
+									</button>
 								</div>
+								
+								{formData.hogList.length === 0 ? (
+									<div className="no-hogs-message">
+										<p>No hogs added yet. Click the button above to add a hog.</p>
+									</div>
+								) : (
+									<div className="hog-list">
+										{formData.hogList.map((hog, index) => (
+											<HogEntry 
+												key={index}
+												index={index}
+												hog={hog}
+												onChange={handleHogChange}
+												onRemove={handleRemoveHog}
+											/>
+										))}
+									</div>
+								)}
+								
+								{errors.hogList && <span className="error-message">{errors.hogList}</span>}
+								{errors.hogErrors && (
+									<div className="hog-errors">
+										{formData.hogList.map((_, index) => 
+											errors.hogErrors[index] ? (
+												<div key={index} className="hog-error">
+													<p>Hog #{index+1} has errors:</p>
+													<ul>
+														{Object.entries(errors.hogErrors[index]).map(([field, error]) => (
+															<li key={field}>{error}</li>
+														))}
+													</ul>
+												</div>
+											) : null
+										)}
+									</div>
+								)}
 							</div>
 
-							<div className="input-group">
+							<div className="input-group-reg">
 								<label>Valid ID<span className="required">*</span></label>
+								<div className="id-container">
+									<select
+										name="validIdType"
+										value={formData.validIdType}
+										onChange={handleChange}
+										className="id-select"
+									>
+										<option value="">Select ID Type</option>
+										<option value="Philippine Passport">Philippine Passport</option>
+										<option value="SSS ID">SSS ID</option>
+										<option value="GSIS ID">GSIS ID</option>
+										<option value="PhilHealth ID">PhilHealth ID</option>
+										<option value="Voter's ID">Voter's ID</option>
+										<option value="Driver's License">Driver's License</option>
+										<option value="PRC ID">PRC ID</option>
+										<option value="NBI Clearance">NBI Clearance</option>
+										<option value="PhilSys National ID">PhilSys National ID</option>
+										<option value="Postal ID">Postal ID</option>
+										<option value="Barangay ID">Barangay ID</option>
+									</select>
+									{errors.validIdType && <span className="error-message">{errors.validIdType}</span>}
+								</div>
 								<div className="file-upload-container">
 									<label className="file-upload-btn">
 										Upload Valid ID
@@ -635,6 +913,20 @@ export default function RegistrationForm() {
 									</label>
 									{formData.validId && (
 										<div className="file-preview">
+											<div className="image-preview-container">
+												<img 
+													src={URL.createObjectURL(formData.validId)} 
+													alt="ID Preview" 
+													className="id-preview-image"
+												/>
+												<button 
+													type="button" 
+													className="remove-btn"
+													onClick={() => setFormData({...formData, validId: null})}
+												>
+													Remove
+												</button>
+											</div>
 											<p>{formData.validId.name}</p>
 										</div>
 									)}
@@ -642,40 +934,7 @@ export default function RegistrationForm() {
 								</div>
 							</div>
 
-							<div className="input-group">
-								<label>Hog Photos (Maximum 3)<span className="required">*</span></label>
-								<div className="file-upload-container">
-									<label className="file-upload-btn">
-										Upload Photos
-										<input 
-											type="file" 
-											accept="image/*" 
-											multiple 
-											onChange={handleHogPhotosUpload} 
-											disabled={formData.hogPhotos.length >= 3}
-										/>
-									</label>
-									{formData.hogPhotos.length > 0 && (
-										<div className="photos-preview">
-											{formData.hogPhotos.map((photo, index) => (
-												<div key={index} className="photo-item">
-													<p>{photo.name}</p>
-													<button 
-														type="button" 
-														className="remove-btn"
-														onClick={() => removeHogPhoto(index)}
-													>
-														Remove
-													</button>
-												</div>
-											))}
-										</div>
-									)}
-									{errors.hogPhotos && <span className="error-message">{errors.hogPhotos}</span>}
-								</div>
-							</div>
-
-							<div className="input-group privacy-checkbox-container">
+							<div className="input-group-reg privacy-checkbox-container">
 								<div className="checkbox-wrapper">
 									<input
 										type="checkbox"
