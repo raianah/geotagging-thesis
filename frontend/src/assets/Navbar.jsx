@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+import { RiMenu3Line, RiCloseLine } from "react-icons/ri";
 import { BiNotification } from "react-icons/bi";
 import { FaRegClipboard } from "react-icons/fa";
 import { FiMoon, FiSun, FiLogOut } from "react-icons/fi";
@@ -20,9 +21,13 @@ const Navbar = ({ darkMode, setDarkMode, currentUser, isHomePage = false }) => {
     const [hogOwnersModalOpen, setHogOwnersModalOpen] = useState(false);
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [selectedNotification, setSelectedNotification] = useState(null);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const dropdownRef = useRef(null);
     const notificationRef = useRef(null);
     const navigate = useNavigate();
+    const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+    const [menuAnimation, setMenuAnimation] = useState(false);
+    const [darkModeToggleActive, setDarkModeToggleActive] = useState(false);
 
     // Using a state to manage user data that might be modified
     const [userData, setUserData] = useState({
@@ -50,6 +55,49 @@ const Navbar = ({ darkMode, setDarkMode, currentUser, isHomePage = false }) => {
         console.log('Navbar userData:', userData);
     }, [userData]);
 
+    useEffect(() => {
+        const handleResize = () => {
+          const width = window.innerWidth;
+          setWindowWidth(width);
+          
+          // Auto-close mobile menu when resizing to desktop
+          if (width > 768 && mobileMenuOpen) {
+            setMobileMenuOpen(false);
+          }
+        };
+      
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [mobileMenuOpen]);
+
+    // Modified handleClickOutside function to fix the error
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+            setDropdownOpen(false);
+        }
+        if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+            setNotificationsOpen(false);
+        }
+        // Fixed check for mobile menu - className can be a string or object depending on the element
+        if (mobileMenuOpen) {
+            const target = event.target;
+            const isMenuOrHamburger = 
+            target.closest('.mobile-menu') || 
+            target.closest('.hamburger-menu');
+            
+            if (!isMenuOrHamburger) {
+            setMobileMenuOpen(false);
+            }
+        }
+        };
+    
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [mobileMenuOpen]);
+
     // Helper to get user initials (works for all roles)
     const getUserInitials = (user) => {
         if (!user) return '';
@@ -62,6 +110,49 @@ const Navbar = ({ darkMode, setDarkMode, currentUser, isHomePage = false }) => {
         return '?'; // Show '?' if truly no info
     };
 
+    const showMobileNotifications = () => {
+        // Make sure unreadCount is accessible in this scope
+        const mobileUnreadCount = notifications.filter(n => !n.read).length;
+        
+        if (windowWidth <= 768) {
+            return (
+                <div className="navbar-notifications-detail-modal" onClick={() => setNotificationsOpen(false)}>
+                <div className="navbar-notifications-dropdown" onClick={(e) => e.stopPropagation()}>
+                    <div className="navbar-notifications-header">
+                    <h3>Notifications</h3>
+                    {mobileUnreadCount > 0 && <span className="unread-count">{mobileUnreadCount} unread</span>}
+                    <button 
+                        className="close-notifications-btn"
+                        onClick={() => setNotificationsOpen(false)}
+                    >
+                        &times;
+                    </button>
+                    </div>
+                    <div className="dropdown-divider"></div>
+                    {notifications.length > 0 ? (
+                    <div className="navbar-notifications-list">
+                        {notifications.map(notification => (
+                        <div 
+                            key={notification.id} 
+                            className={`navbar-notifications-item ${!notification.read ? 'unread' : ''}`}
+                            onClick={() => handleNotificationClick(notification)}
+                        >
+                            <div className="navbar-notifications-title">{notification.title}</div>
+                            <div className="navbar-notifications-preview">{notification.message}</div>
+                            <div className="navbar-notifications-date">{notification.date}</div>
+                        </div>
+                        ))}
+                    </div>
+                    ) : (
+                    <div className="no-notifications">No notifications</div>
+                    )}
+                </div>
+                </div>
+            );
+        }
+        return null;
+    };
+
     // Helper to get full name (works for all roles)
     const getFullName = (user) => {
         if (!user) return '';
@@ -71,6 +162,33 @@ const Navbar = ({ darkMode, setDarkMode, currentUser, isHomePage = false }) => {
         if (user.email) return user.email;
         if (user.username) return user.username;
         return '';
+    };
+
+    const handleDarkModeToggle = () => {
+        setDarkModeToggleActive(true);
+        setDarkMode(!darkMode);
+        
+        // Remove animation class after animation completes
+        setTimeout(() => {
+            setDarkModeToggleActive(false);
+        }, 300);
+    };
+
+    const toggleMobileMenu = () => {
+        if (mobileMenuOpen) {
+            // Start closing animation
+            setMenuAnimation(false);
+            // Delay actual closing to allow animation to complete
+            setTimeout(() => {
+                setMobileMenuOpen(false);
+            }, 300);
+        } else {
+            setMobileMenuOpen(true);
+            // Slight delay to ensure DOM is updated before animation
+            setTimeout(() => {
+                setMenuAnimation(true);
+            }, 10);
+        }
     };
 
     const handleAccountSettings = () => {
@@ -207,78 +325,123 @@ const Navbar = ({ darkMode, setDarkMode, currentUser, isHomePage = false }) => {
 
                 {/* Right section with controls */}
                 <div className="user-controls">
-                    <div className="dark-mode-toggle" onClick={() => setDarkMode(!darkMode)} title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}>
+                    <div className={`dark-mode-toggle ${darkModeToggleActive ? 'toggle-active' : ''}`} onClick={handleDarkModeToggle} title={darkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}>
                         {darkMode ? <FiSun /> : <FiMoon />}
                     </div>
 
                     {isHomePage ? (
                         <div className="home-auth-buttons">
-                            <Link to="/login" className="btn-login">Login</Link>
-                            <Link to="/register" className="btn-register-nav">Register</Link>
+                        <Link to="/login" className="btn-login">Login</Link>
+                        <Link to="/register" className="btn-register-nav">Register</Link>
                         </div>
                     ) : (
-                        <div className="profile-container" ref={dropdownRef} onClick={() => setDropdownOpen(!dropdownOpen)}>
-                            {userData.profilePicture ? (
-                                <img src={userData.profilePicture} alt="Profile" className="profile-pic-small" />
-                            ) : (
-                                <div className="profile-initials">
-                                    {getUserInitials(userData)}
+                        <>
+                        <div className="desktop-menu">
+                            <div className="navbar-notifications-container" ref={notificationRef} onClick={toggleNotifications} title="Notifications">
+                                <div className="navbar-notifications-wrapper">
+                                    <BiNotification className="navbar-notifications-icon" />
+                                    {unreadCount > 0 && <span className="navbar-notifications-badge">{unreadCount}</span>}
                                 </div>
-                            )}
-                            
-                            {dropdownOpen && (
-                                <div className="profile-dropdown">
-                                    <div className="profile-header">
-                                        <div className="dropdown-user-name">{fullName}</div>
-                                        <div className="dropdown-user-role">{userRole}</div>
-                                    </div>
-                                    <div className="dropdown-divider"></div>
-                                    <button onClick={handleAccountSettings}><IoSettingsOutline className="dropdown-icon" /> Account Settings</button>
-                                    {userData.accountType === 'Employee' && (
-                                        <button onClick={handleViewOwners}><FaRegClipboard className="dropdown-icon" />View Hog Owners</button>
-                                    )}
-                                    <button onClick={handleLogout}><FiLogOut className="dropdown-icon" /> Logout</button>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
-                    {!isHomePage && (
-                        <div className="notification-container" ref={notificationRef}>
-                            <div className="notification-wrapper" onClick={toggleNotifications} title="Notifications">
-                                <BiNotification className="notification-icon" />
-                                {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
-                            </div>
-                            
-                            {notificationsOpen && (
-                                <div className="notifications-dropdown">
-                                    <div className="notifications-header">
+                                {notificationsOpen && windowWidth > 768 && (
+                                    <div className="navbar-notifications-dropdown">
+                                    <div className="navbar-notifications-header">
                                         <h3>Notifications</h3>
                                         {unreadCount > 0 && <span className="unread-count">{unreadCount} unread</span>}
                                     </div>
                                     <div className="dropdown-divider"></div>
                                     {notifications.length > 0 ? (
-                                        <div className="notifications-list">
-                                            {notifications.map(notification => (
-                                                <div 
-                                                    key={notification.id} 
-                                                    className={`notification-item ${!notification.read ? 'unread' : ''}`}
-                                                    onClick={() => handleNotificationClick(notification)}
-                                                >
-                                                    <div className="notification-title">{notification.title}</div>
-                                                    <div className="notification-preview">{notification.message.substring(0, 50)}...</div>
-                                                    <div className="notification-date">{notification.date}</div>
-                                                </div>
-                                            ))}
+                                        <div className="navbar-notifications-list">
+                                        {notifications.map(notification => (
+                                            <div key={notification.id} className={`navbar-notifications-item ${!notification.read ? 'unread' : ''}`} onClick={(e) => { e.stopPropagation(); handleNotificationClick(notification); }}>
+                                                <div className="navbar-notifications-title">{notification.title}</div>
+                                                <div className="navbar-notifications-preview">{notification.message.substring(0, 50)}...</div>
+                                                <div className="navbar-notifications-date">{notification.date}</div>
+                                            </div>
+                                        ))}
                                         </div>
                                     ) : (
                                         <div className="no-notifications">No notifications</div>
                                     )}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="profile-container" ref={dropdownRef} onClick={() => setDropdownOpen(!dropdownOpen)}>
+                            {userData.profilePicture ? (
+                                <img src={userData.profilePicture} alt="Profile" className="profile-pic-small" />
+                            ) : (
+                                <div className="profile-initials">
+                                {getUserInitials(userData)}
                                 </div>
                             )}
+                            
+                            {dropdownOpen && (
+                                <div className="profile-dropdown">
+                                <div className="profile-header">
+                                    <div className="dropdown-user-name">{fullName}</div>
+                                    <div className="dropdown-user-role">{userRole}</div>
+                                </div>
+                                <div className="dropdown-divider"></div>
+                                <button onClick={handleAccountSettings}><IoSettingsOutline className="dropdown-icon" /> Account Settings</button>
+                                {userData.accountType === 'Employee' && (
+                                    <button onClick={handleViewOwners}><FaRegClipboard className="dropdown-icon" />View Hog Owners</button>
+                                )}
+                                <button onClick={handleLogout}><FiLogOut className="dropdown-icon" /> Logout</button>
+                                </div>
+                            )}
+                            </div>
                         </div>
+
+                        <div className="hamburger-menu" onClick={toggleMobileMenu}>
+                            {mobileMenuOpen ? 
+                                <RiCloseLine className={`hamburger-icon ${menuAnimation ? 'active' : ''}`} /> : 
+                                <RiMenu3Line className="hamburger-icon" />
+                            }
+                        </div>
+
+                        {mobileMenuOpen && (
+                            <div className={`mobile-menu ${menuAnimation ? 'active' : ''}`}>
+                                <div className="mobile-menu-header">
+                                    <div className="mobile-profile">
+                                    {userData.profilePicture ? (
+                                        <img src={userData.profilePicture} alt="Profile" className="mobile-profile-pic" />
+                                    ) : (
+                                        <div className="mobile-profile-initials">
+                                        {getUserInitials(userData)}
+                                        </div>
+                                    )}
+                                    <div className="mobile-user-info">
+                                        <div className="mobile-user-name">{fullName}</div>
+                                        <div className="mobile-user-role">{userRole}</div>
+                                    </div>
+                                    </div>
+                                </div>
+                                <div className="dropdown-divider"></div>
+                                <div className="mobile-menu-items">
+                                    <button onClick={() => { handleAccountSettings(); setMobileMenuOpen(false); }}>
+                                    <IoSettingsOutline className="mobile-menu-icon" /> Account Settings
+                                    </button>
+                                    
+                                    {userData.accountType === 'Employee' && (
+                                    <button onClick={() => { handleViewOwners(); setMobileMenuOpen(false); }}>
+                                        <FaRegClipboard className="mobile-menu-icon" /> View Hog Owners
+                                    </button>
+                                    )}
+                                    
+                                    <button onClick={() => { toggleNotifications(); setMobileMenuOpen(false); }}>
+                                    <BiNotification className="mobile-menu-icon" /> 
+                                    Notifications
+                                    {unreadCount > 0 && <span className="mobile-notification-badge">{unreadCount}</span>}
+                                    </button>
+                                    
+                                    <button onClick={handleLogout}>
+                                    <FiLogOut className="mobile-menu-icon" /> Logout
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                        </>
                     )}
-                    
                 </div>
             </nav>
 
@@ -304,6 +467,8 @@ const Navbar = ({ darkMode, setDarkMode, currentUser, isHomePage = false }) => {
                     onDelete={deleteNotification}
                 />
             )}
+
+            {notificationsOpen && windowWidth <= 768 && showMobileNotifications()}
         </div>
     );
 };

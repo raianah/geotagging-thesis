@@ -10,6 +10,9 @@ export default function LoginForm() {
     const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
 
+    const [notifications, setNotifications] = useState([]);
+    const [notificationId, setNotificationId] = useState(0);
+
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -55,7 +58,7 @@ export default function LoginForm() {
             const profile = await getProfile();
             localStorage.setItem("profile", JSON.stringify(profile));
             setLoading(false);
-            alert("Login successful!");
+            showNotification("Login successful!", "success");
             // Robust, case-insensitive redirect based on user role
             if (profile.role && profile.role.toLowerCase() === 'employee') {
                 navigate("/employee-dashboard");
@@ -70,8 +73,53 @@ export default function LoginForm() {
         }
     };
 
+    const showNotification = (message, type = 'info') => {
+        const id = notificationId + 1;
+        setNotificationId(id);
+        
+        const newNotification = {
+            id,
+            message,
+            type,
+            timestamp: new Date()
+        };
+        
+        setNotifications([...notifications, newNotification]);
+        
+        // Auto-remove notification after 5 seconds
+        setTimeout(() => {
+            setNotifications(notifications => 
+                notifications.filter(notification => notification.id !== id)
+            );
+        }, 5000);
+    };
+
+    const removeNotification = (id) => {
+        setNotifications(notifications => 
+            notifications.filter(notification => notification.id !== id)
+        );
+    };
+
     return (
         <div className="login-container">
+            <div className="slide-notification-container">
+                {notifications.map(notification => (
+                    <div 
+                        key={notification.id} 
+                        className={`slide-notification notification-${notification.type}`}
+                    >
+                        <div className="slide-notification-content">
+                            {notification.message}
+                        </div>
+                        <button 
+                            className="slide-notification-close"
+                            onClick={() => removeNotification(notification.id)}
+                        >
+                            ×
+                        </button>
+                    </div>
+                ))}
+            </div>
             <div className="login-card">
                 <div className="logo-container">
                     <img src={logo} alt="Balayan Hog Registration" className="logo" />

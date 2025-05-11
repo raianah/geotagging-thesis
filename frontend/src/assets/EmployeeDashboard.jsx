@@ -24,6 +24,9 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
     const [error, setError] = useState(null);
     const [asfOutbreakCount, setAsfOutbreakCount] = useState(0);
 
+    const [notifications, setNotifications] = useState([]);
+    const [notificationId, setNotificationId] = useState(0);
+
     // Fetch authenticated user profile from localStorage
     const [currentUser, setCurrentUser] = useState(() => {
         try {
@@ -227,9 +230,13 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
             }
             // If viewing details of this account, close modal
             if (selectedAccount && selectedAccount.uid === uid) closeDetailsModal();
-            alert(`Account ${action === 'approve' ? 'approved' : 'rejected'} successfully!`);
+            if (action === 'approve') {
+                showNotification("Account was approved", 'success');
+            } else {
+                showNotification("Account rejected.", 'error');
+            }
         } catch (err) {
-            alert('Failed to update account status: ' + err.message);
+            showNotification("Failed to update account status: " + err.message, 'error');
         }
     };
 
@@ -297,12 +304,62 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
     };
     const chartData = generateMonthlyData();
 
+    const generateChartAnalysis = (statType) => {
+        const data = chartData[statType];
+        if (!data || data.length < 2) return "Insufficient data for trend analysis.";
+        
+        // Get the most recent months for comparison (last 3 months)
+        const recentMonths = data.slice(-3);
+        
+        // Calculate percentage change from previous to current month
+        const currentValue = recentMonths[recentMonths.length - 1].value;
+        const previousValue = recentMonths[recentMonths.length - 2].value;
+        
+        // Calculate trends
+        const percentChange = previousValue === 0 
+            ? (currentValue > 0 ? 100 : 0) 
+            : ((currentValue - previousValue) / previousValue * 100).toFixed(1);
+        
+        // Trend direction
+        const isIncreasing = currentValue > previousValue;
+        const isSame = currentValue === previousValue;
+        
+        // Generate analysis text based on stat type
+        switch (statType) {
+            case 'Total No. of Registered Hog Raisers':
+                if (isSame) return `Registration numbers have remained stable at ${currentValue} in the most recent month. No growth trend detected in the registration rate.`;
+                return isIncreasing 
+                    ? `User registrations increased by ${percentChange}% in the last month, showing positive adoption growth. Total registered users now at ${currentValue}.`
+                    : `User registrations decreased by ${Math.abs(percentChange)}% compared to previous month. May require community outreach initiatives to boost adoption.`;
+            
+            case 'Pending Applications':
+                if (isSame) return `The pending applications count remains steady at ${currentValue}. Current verification workflow is keeping pace with new applications.`;
+                return isIncreasing 
+                    ? `Pending applications increased by ${percentChange}% (${currentValue} total). Consider allocating additional resources for verification to prevent backlog.`
+                    : `Pending applications decreased by ${Math.abs(percentChange)}%. Verification process is effectively managing the application queue.`;
+            
+            case 'ASF Outbreak Reports':
+                if (currentValue === 0) return "No ASF outbreaks reported in the current period, indicating successful containment or prevention measures.";
+                if (isSame) return `ASF outbreak reports remain consistent at ${currentValue}. Continue monitoring affected areas closely.`;
+                return isIncreasing 
+                    ? `ASF outbreak reports increased by ${percentChange}% to ${currentValue} total cases. Immediate attention required in affected locations.`
+                    : `ASF outbreak reports decreased by ${Math.abs(percentChange)}%. Containment measures appear to be effective.`;
+            
+            default:
+                return "Select a metric to view trend analysis.";
+        }
+    };
+
     // Custom tooltip component to prevent highlighting
     const CustomTooltip = ({ active, payload, label }) => {
         if (active && payload && payload.length) {
             return (
-                <div className="custom-tooltip">
-                    <p className="label">{`${label} : ${payload[0].value}`}</p>
+                <div className={`custom-tooltip ${darkMode ? 'dark' : 'light'}`}>
+                    <p className="tooltip-label">{label}</p>
+                    <p className="tooltip-value">{`${selectedStat}: ${payload[0].value}`}</p>
+                    {selectedStat === 'ASF Outbreak Reports' && payload[0].value > 0 && (
+                        <p className="tooltip-alert">Requires attention</p>
+                    )}
                 </div>
             );
         }
@@ -327,11 +384,57 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
         return date.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     };
 
+    const showNotification = (message, type = 'info') => {
+        const id = notificationId + 1;
+        setNotificationId(id);
+        
+        const newNotification = {
+            id,
+            message,
+            type,
+            timestamp: new Date()
+        };
+        
+        setNotifications([...notifications, newNotification]);
+        
+        // Auto-remove notification after 5 seconds
+        setTimeout(() => {
+            setNotifications(notifications => 
+                notifications.filter(notification => notification.id !== id)
+            );
+        }, 5000);
+    };
+
+    const removeNotification = (id) => {
+        setNotifications(notifications => 
+            notifications.filter(notification => notification.id !== id)
+        );
+    };
+
     return (
-        <div className='dashboard-wrapper'>
+        <div className={`dashboard-wrapper ${darkMode ? 'dark-mode' : ''}`} style={{ marginTop: '50px' }}>
             <Navbar darkMode={darkMode} setDarkMode={setDarkMode} currentUser={currentUser} />
 
-            <div className="dashboard-container">
+            <div className="slide-notification-container">
+                {notifications.map(notification => (
+                    <div 
+                        key={notification.id} 
+                        className={`slide-notification notification-${notification.type}`}
+                    >
+                        <div className="slide-notification-content">
+                            {notification.message}
+                        </div>
+                        <button 
+                            className="slide-notification-close"
+                            onClick={() => removeNotification(notification.id)}
+                        >
+                            ×
+                        </button>
+                    </div>
+                ))}
+            </div>
+
+            <div className="employee-dashboard-container">
                 <div className="stats-section">
                     {statTypes.map((stat) => (
                         <div key={stat} className="stat-card" onClick={() => handleCardClick(stat)}>
@@ -372,19 +475,79 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
                     <div className={`graph-modal-content ${animationDirection || ''}`} onClick={(e) => e.stopPropagation()}>
                         <div className="graph-modal-header">
                             <h2>{selectedStat}</h2>
-                            <button className="close-btn" onClick={closeGraphModal}>×</button>
+                            <button className="em-close-btn" onClick={closeGraphModal}>×</button>
                         </div>
-                        <div className="graph-modal-body">
-                            <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={chartData[selectedStat]}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="name" />
-                                    <YAxis />
+                        
+                        {/* Desktop Chart - Only show on screens wider than 768px */}
+                        <div className="graph-modal-body desktop-chart">
+                            <ResponsiveContainer width="100%" height={400}>
+                                <BarChart 
+                                    data={chartData[selectedStat]}
+                                    margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                                >
+                                    <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"} />
+                                    <XAxis 
+                                        dataKey="name" 
+                                        tick={{fontSize: 12}}
+                                        interval={0}
+                                        angle={0}
+                                        textAnchor="middle"
+                                        height={60}
+                                        stroke={darkMode ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.7)"}
+                                    />
+                                    <YAxis stroke={darkMode ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.7)"} />
                                     <Tooltip content={<CustomTooltip />} cursor={false} />
-                                    <Legend />
-                                    <Bar dataKey="value" fill={getBarColor(selectedStat)} />
+                                    <Legend wrapperStyle={{paddingTop: "10px"}} />
+                                    <Bar 
+                                        dataKey="value" 
+                                        fill={getBarColor(selectedStat)} 
+                                        animationDuration={750}
+                                        animationEasing="ease-in-out"
+                                    />
                                 </BarChart>
                             </ResponsiveContainer>
+                        </div>
+                        
+                        {/* Mobile Chart - Only show on screens 768px or smaller */}
+                        <div className="graph-modal-body mobile-chart">
+                            <ResponsiveContainer width="100%" height={400}>
+                                <BarChart 
+                                    data={chartData[selectedStat]}
+                                    margin={{ top: 5, right: 10, left: -10, bottom: 60 }}
+                                >
+                                    <CartesianGrid strokeDasharray="3 3" stroke={darkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)"} />
+                                    <XAxis 
+                                        dataKey="name" 
+                                        tick={{fontSize: 9}}
+                                        interval={1}
+                                        angle={-45}
+                                        textAnchor="end"
+                                        height={80}
+                                        stroke={darkMode ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.7)"}
+                                    />
+                                    <YAxis 
+                                        stroke={darkMode ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.7)"}
+                                        width={30}
+                                        tickCount={5}
+                                        tick={{fontSize: 10}}
+                                    />
+                                    <Tooltip content={<CustomTooltip />} cursor={false} />
+                                    <Legend 
+                                        wrapperStyle={{paddingTop: "5px", fontSize: "10px"}}
+                                    />
+                                    <Bar 
+                                        dataKey="value" 
+                                        fill={getBarColor(selectedStat)} 
+                                        animationDuration={750}
+                                        animationEasing="ease-in-out"
+                                    />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
+                        
+                        <div className="graph-analysis">
+                            <h3>Trend Analysis</h3>
+                            <p>{generateChartAnalysis(selectedStat)}</p>
                         </div>
                         <div className="graph-navigation">
                             <button className="nav-btn prev-btn" onClick={() => navigateGraph('prev')}>
@@ -394,7 +557,7 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
                                 {statTypes.map((stat, index) => (
                                     <span 
                                         key={index} 
-                                        className={`indicator ${selectedStat === stat ? 'active' : ''}`}
+                                        className={`indicator ${selectedStat === stat ? 'active' : ''} ${darkMode ? 'dark' : 'light'}`}
                                         onClick={() => {
                                             setAnimationDirection('fade-in');
                                             setTimeout(() => {
@@ -418,7 +581,7 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
                     <div className="pending-modal-content" onClick={(e) => e.stopPropagation()}>
                         <div className="pending-modal-header">
                             <h2>Pending Account Verifications</h2>
-                            <button className="close-btn" onClick={closePendingModal}>×</button>
+                            <button className="em-close-btn" onClick={closePendingModal}>×</button>
                         </div>
                         <div className="pending-modal-search">
                             <div className="search-container">
@@ -506,7 +669,7 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
                     <div className="details-modal-content" onClick={(e) => e.stopPropagation()}>
                         <div className="details-modal-header">
                             <h2>Account Details</h2>
-                            <button className="close-btn" onClick={closeDetailsModal}>
+                            <button className="em-close-btn" onClick={closeDetailsModal}>
                                 <X size={20} />
                             </button>
                         </div>

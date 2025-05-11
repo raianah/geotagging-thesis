@@ -1,7 +1,20 @@
 /* EmployeeDashboard.css */
-.dashboard-container.dark-mode {
+.employee-dashboard-container {
+    position: absolute;
+    top: 6rem;
+    left: 0;
+    width: 100%;
+    bottom: 0;
+    overflow-y: auto;
+    color: var(--navbar-text);
+    padding: 20px;
+    box-sizing: border-box;
+    z-index: 1;
+}
+
+.employee-dashboard-container.dark-mode {
     --background-color: #121212;
-    --text-color: white;
+    --text-color: var(--text-color);
 }
 
 .header-bar {
@@ -37,7 +50,7 @@
 }
 
 .stat-card:hover {
-    transform: scale(1.05);
+    transform: scale(1.03);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
 }
 
@@ -47,9 +60,9 @@
     color: #ff6b6b;
 }
 
-.dashboard-container.dark-mode .stat-card {
+.employee-dashboard-container.dark-mode .stat-card {
     background-color: #2d2d2d;
-    color: white;
+    color: var(--text-color);
 }
 
 .content-section {
@@ -82,7 +95,7 @@
 .pending-accounts-btn {
     background-color: #ff6b6b;
     border: none;
-    color: white;
+    color: var(--text-color);
     padding: 16px;
     border-radius: 12px;
     cursor: pointer;
@@ -162,7 +175,8 @@
 .graph-modal-content {
     width: 75%;
     height: 75%;
-    background: linear-gradient(135deg, #1e1e2f, #2a2a3d);
+    background-color: var(--stat-card-bg, #e0e0e0);
+    color: var(--text-color);
     border-radius: 8px;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
     position: relative;
@@ -182,7 +196,6 @@
 }
 
 .graph-modal-header h2 {
-    color: white;
     margin: 0;
     transition: opacity 0.2s ease;
 }
@@ -196,26 +209,111 @@
     transition: opacity 0.2s ease;
 }
 
-.close-btn {
+.graph-analysis {
+    margin: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+.graph-analysis h3 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+    color: #ff6b6b;
+    font-size: 1.1rem;
+}
+
+.graph-analysis p {
+    margin: 0;
+    line-height: 1.5;
+}
+
+.desktop-chart {
+    display: flex;
+}
+
+.mobile-chart {
+    display: none;
+}
+
+/* Add media queries for mobile responsiveness */
+@media screen and (max-width: 1250px) {
+    .desktop-chart {
+        display: none;
+    }
+    
+    .mobile-chart {
+        display: flex;
+        margin: 0;
+    }
+    
+    .graph-modal-content {
+        width: 95%;
+        max-height: 90vh;
+        padding: 15px;
+        overflow-y: auto;
+    }
+
+    .graph-analysis {
+        padding: 10px;
+    }
+    
+    .graph-navigation {
+        padding: 5px 0;
+    }
+    
+    .custom-tooltip {
+        font-size: 11px;
+        padding: 5px 8px;
+    }
+}
+
+.em-close-btn {
+    color: var(--text-color);
     background: none;
     border: none;
-    color: #ccc;
     font-size: 1.5rem;
     cursor: pointer;
     padding: 5px 10px;
 }
 
-.close-btn:hover {
-    color: white;
+.em-close-btn:hover {
     background-color: transparent;
 }
 
+/* Enhanced tooltip styles */
 .custom-tooltip {
-    background-color: rgba(30, 30, 47, 0.9);
-    border: 1px solid #444;
-    padding: 0.5rem;
+    padding: 10px;
     border-radius: 4px;
-    color: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+
+.custom-tooltip.light {
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 1px solid #ddd;
+    color: #333;
+}
+
+.custom-tooltip.dark {
+    background-color: rgba(30, 30, 47, 0.95);
+    border: 1px solid #444;
+    color: var(--text-color);
+}
+
+.tooltip-label {
+    margin: 0 0 5px;
+    font-weight: bold;
+}
+
+.tooltip-value {
+    margin: 0;
+    color: #ff6b6b;
+}
+
+.tooltip-alert {
+    margin: 5px 0 0;
+    font-size: 0.85em;
+    color: #f44336;
 }
 
 .notification-modal-overlay {
@@ -233,9 +331,10 @@
 
 .notification-modal-content {
     width: auto;
-    min-width: 400px;
-    max-width: 500px;
-    background: linear-gradient(135deg, #1e1e2f, #2a2a3d);
+    min-width: 450px;
+    max-width: 550px;
+    background-color: var(--stat-card-bg, #e0e0e0);
+    color: var(--text-color);
     border-radius: 8px;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
     position: relative;
@@ -254,7 +353,7 @@
 }
 
 .notification-modal-header h2 {
-    color: white;
+    color: var(--text-color);
     margin: 0;
     font-size: 18px;
 }
@@ -276,7 +375,7 @@
 
 .notification-label {
     display: block;
-    color: white;
+    color: var(--text-color);
     font-size: 14px;
     font-weight: bold;
     margin-bottom: 6px;
@@ -285,21 +384,22 @@
 .notification-input {
     width: 100%;
     padding: 10px;
-    background-color: #2a2a3d;
+    background-color: var(--stat-card-bg, #e0e0e0);
     border: 1px solid #444;
     border-radius: 4px;
-    color: white;
+    color: var(--text-color);
 }
 
 .notification-textarea {
-    width: 350px;
+    width: 100%; /* Changed from fixed 350px to be responsive */
     padding: 10px;
-    background-color: #2a2a3d;
+    background-color: var(--stat-card-bg, #e0e0e0);
     border: 1px solid #444;
     border-radius: 4px;
-    color: white;
+    color: var(--text-color);
     height: 100px;
     resize: vertical;
+    box-sizing: border-box;
 }
 
 .notification-button-container {
@@ -313,26 +413,83 @@
     padding: 6px 12px;
     border: 1px solid #444;
     border-radius: 4px;
-    color: #ccc;
+    color: var(--text-color);
     background-color: transparent;
     cursor: pointer;
 }
 
-.notification-cancel-button:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-}
-
 .notification-create-button {
     padding: 6px 12px;
-    background-color: #3a6df0;
+    background-color: #ff6b6b;
     border: none;
     border-radius: 4px;
-    color: white;
+    color: var(--text-color);
     cursor: pointer;
 }
 
 .notification-create-button:hover {
-    background-color: #2f5cd1;
+    background-color: #ff5252;
+}
+
+.notification-select {
+    width: 100%;
+    padding: 10px;
+    background-color: var(--stat-card-bg, #e0e0e0);
+    border: 1px solid #444;
+    border-radius: 4px;
+    color: var(--text-color);
+    cursor: pointer;
+}
+
+.template-selector {
+    position: relative;
+    width: 100%;
+}
+
+/* Input wrapper for icons */
+.notification-input-wrapper {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    position: relative;
+    background-color: var(--stat-card-bg, #e0e0e0);
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 0 8px;
+    box-sizing: border-box;
+}
+
+.notification-input-wrapper input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 10px;
+    color: var(--text-color);
+    width: calc(100% - 24px); /* Account for the icon */
+    box-sizing: border-box;
+}
+
+/* Additional styling for template indicators */
+.template-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-left: 8px;
+    background-color: rgba(255, 107, 107, 0.2);
+}
+
+/* Animation for modal */
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Graph Navigation */
@@ -346,7 +503,7 @@
 
 .nav-btn {
     background: rgba(255, 255, 255, 0.1);
-    color: white;
+    color: var(--text-color);
     border: none;
     border-radius: 50%;
     width: 40px;
@@ -374,22 +531,29 @@
 }
 
 .indicator {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.3);
-    cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.2s ease;
+    opacity: 0.5;
+    transition: all 0.2s ease;
 }
 
-.indicator:hover {
-    transform: scale(1.2);
+.indicator.light {
+    background: #333;
+}
+
+.indicator.dark {
+    background: rgba(255, 255, 255, 0.7);
 }
 
 .indicator.active {
-    background-color: rgba(255, 255, 255, 0.8);
-    width: 12px;
-    height: 12px;
+    opacity: 1;
+    transform: scale(1.2);
+}
+
+.indicator.light.active {
+    background: #111;
+}
+
+.indicator.dark.active {
+    background: #fff;
 }
 
 /* Animations for graph transitions */
@@ -408,7 +572,8 @@
 .pending-modal-content {
     width: 85%;
     height: 85%;
-    background: linear-gradient(135deg, #1e1e2f, #2a2a3d);
+    background-color: var(--stat-card-bg, #e0e0e0);
+    color: var(--text-color);
     border-radius: 8px;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
     position: relative;
@@ -427,7 +592,7 @@
 }
 
 .pending-modal-header h2 {
-    color: white;
+    color: var(--text-color);
     margin: 0;
 }
 
@@ -439,7 +604,8 @@
 .search-container {
     display: flex;
     align-items: center;
-    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--text-color);
+    color: var(--text-color);
     border-radius: 8px;
     padding: 0.5rem 1rem;
     gap: 10px;
@@ -448,14 +614,13 @@
 .search-container input {
     background: transparent;
     border: none;
-    color: white;
     flex: 1;
     font-size: 16px;
     outline: none;
 }
 
 .search-container input::placeholder {
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--text-color);
 }
 
 .pending-table-container {
@@ -468,7 +633,7 @@
     width: 100%;
     border-collapse: collapse;
     margin-top: 1rem;
-    color: white;
+    color: var(--text-color);
 }
 
 .pending-table th {
@@ -488,6 +653,7 @@
 .pending-table td {
     padding: 0.75rem 0.5rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
 }
 
 .pending-table tr:hover {
@@ -508,7 +674,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
+    color: var(--text-color);
     transition: background-color 0.2s ease, transform 0.2s ease;
 }
 
@@ -606,7 +772,8 @@
     width: 650px;
     max-width: 90%;
     max-height: 85%;
-    background: linear-gradient(135deg, #1e1e2f, #2a2a3d);
+    background-color: var(--stat-card-bg, #e0e0e0);
+    color: var(--text-color);
     border-radius: 12px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
     position: relative;
@@ -625,7 +792,7 @@
 }
 
 .details-modal-header h2 {
-    color: white;
+    color: var(--text-color);
     margin: 0;
     font-size: 1.5rem;
 }
@@ -634,7 +801,7 @@
     flex: 1;
     padding: 1.5rem;
     overflow-y: auto;
-    color: white;
+    color: var(--text-color);
 }
 
 .details-modal-footer {
@@ -724,7 +891,7 @@
 
 .detail-value {
     font-size: 1rem;
-    color: white;
+    color: var(--text-color);
     font-weight: 500;
 }
 
@@ -788,7 +955,7 @@
 
 .secondary-btn {
     background-color: rgba(255, 255, 255, 0.1);
-    color: white;
+    color: var(--text-color);
 }
 
 .secondary-btn:hover {
@@ -797,7 +964,7 @@
 
 .approve-btn {
     background-color: #4caf50;
-    color: white;
+    color: var(--text-color);
 }
 
 .approve-btn:hover {
@@ -806,7 +973,7 @@
 
 .reject-btn {
     background-color: #f44336;
-    color: white;
+    color: var(--text-color);
 }
 
 .reject-btn:hover {
@@ -865,4 +1032,69 @@
     .btn {
         flex: 1;
     }
+}
+
+.slide-notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1050;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 350px;
+}
+
+.slide-notification {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 15px;
+    border-radius: 8px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+    animation: slide-in-right 0.3s forwards;
+    overflow: hidden;
+}
+
+.slide-notification-success {
+    background-color: #d4edda;
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+
+.slide-notification-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+}
+
+.slide-notification-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+}
+
+.slide-notification-content {
+    flex: 1;
+    padding-right: 10px;
+}
+
+.slide-notification-close {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+}
+
+.slide-notification-close:hover {
+    opacity: 1;
 }

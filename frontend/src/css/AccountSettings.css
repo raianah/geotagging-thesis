@@ -117,7 +117,7 @@
 .form-group input {
     width: 100%;
     padding: 10px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--navbar-text);
     background-color: transparent;
     border-radius: 6px;
     box-sizing: border-box;
@@ -173,12 +173,18 @@
     font-size: 0.85rem;
 }
 
-.form-actions {
+.accts-form-actions {
     display: flex;
-    justify-content: flex-end;
-    gap: 10px;
+    justify-content: space-between; /* key change */
+    align-items: center;
     margin-top: 30px;
 }
+
+.form-right-buttons {
+    display: flex;
+    gap: 10px;
+}
+
 .cancel-button,
 .save-button {
     padding: 10px 20px;
@@ -358,14 +364,6 @@
     font-weight: 500;
 }
 
-.delete-account-section {
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
-    display: flex;
-    justify-content: center;
-}
-
 .delete-account-button {
     background-color: #e74c3c;
     color: white;
@@ -379,6 +377,167 @@
 
 .delete-account-button:hover {
     background-color: #c0392b;
+}
+
+/* Password Section Styles */
+.password-section {
+    margin-top: 20px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.password-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background-color: rgba(0, 0, 0, 0.03);
+    border: 1px solid var(--navbar-text);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.password-section-header:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.password-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+}
+
+.password-toggle {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.password-form {
+    padding: 15px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    border-left: 1px solid var(--navbar-text);
+    border-right: 1px solid var(--navbar-text);
+    border-bottom: 1px solid var(--navbar-text);
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+
+.input-error {
+    color: #e74c3c;
+    font-size: 0.85rem;
+    margin-top: 5px;
+}
+
+.update-password-button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 15px;
+    margin-top: 10px;
+    cursor: pointer;
+    font-weight: 500;
+    width: 100%;
+    transition: background-color 0.2s;
+}
+
+.update-password-button:hover {
+    background-color: var(--primary-color-dark, #0056b3);
+}
+
+.update-password-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+/* Notification System Styles */
+.notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1050;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 350px;
+}
+
+.notification {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 15px;
+    border-radius: 8px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+    animation: slide-in-right 0.3s forwards;
+    overflow: hidden;
+}
+
+.notification-success {
+    background-color: #d4edda;
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+
+.notification-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+}
+
+.notification-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+}
+
+.notification-content {
+    flex: 1;
+    padding-right: 10px;
+}
+
+.notification-close {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+}
+
+.notification-close:hover {
+    opacity: 1;
+}
+
+@keyframes slide-in-right {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes fade-out {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
 }
 
 @keyframes slide-in {

@@ -1,4 +1,35 @@
 /* Main wrapper */
+:root {
+    --primary-color: #ff6b6b;
+    --primary-light: #ff8585;
+    --primary-dark: #ff4c4c;
+    --primary-very-dark: #e63e3e;
+    --primary-very-light: #ffeded;
+    --accent-color: #ff9e2c;
+    --text-color: #333333;
+    --text-light: #666666;
+    --text-dark: #222222;
+    --background-color: #f8f8f8;
+    --card-background: #ffffff;
+    --border-color: #e0e0e0;
+    --success-color: #2ecc71;
+    --warning-color: #f39c12;
+    --danger-color: #e74c3c;
+    --shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    --stat-card-bg: #e0e0e0;
+}
+
+.dark-mode {
+    --text-color: #f0f0f0;
+    --text-light: #cccccc;
+    --text-dark: #ffffff;
+    --background-color: #121212;
+    --card-background: #2d2d2d;
+    --border-color: #444444;
+    --shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    --stat-card-bg: #1d1d1d;
+}
+
 .asf-map-wrapper {
     display: flex;
     width: 100%;
@@ -12,8 +43,8 @@
     width: 300px;
     min-width: 300px; /* Prevent shrinking */
     height: 100%;
-    background: #222;
-    color: white;
+    background: var(--background-color);
+    color: var(--text-color);
     padding: 20px;
     font-family: Arial, sans-serif;
     display: flex;
@@ -58,16 +89,16 @@
 
 .asf-icon {
     font-size: 20px;
-    color: #ffcc00;
+    color: var(--primary-color);
 }
 
 .asf-section-text {
-    color: #ddd;
+    color: var(--text-color);
 }
 
 .asf-coord-box {
-    background-color: #333;
     padding: 10px;
+    border: 1px solid var(--text-color);
     border-radius: 5px;
     font-size: 14px;
     margin-top: 10px;
@@ -274,6 +305,67 @@
     to {
         opacity: 1;
         transform: scale(1);
+    }
+}
+
+@media (max-width: 768px) {
+    .asf-map-wrapper {
+        flex-direction: column; /* Change from row to column layout */
+    }
+    
+    .asf-sidebar {
+        width: 662px; /* Full width */
+        min-width: unset; /* Remove min-width constraint */
+        height: 45%; /* Take approximately 40% of the height */
+        order: 2; /* Move to the bottom */
+        box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2); /* Shadow from top instead of side */
+        border-top: 1px solid var(--border-color);
+        padding: 12px;
+    }
+    
+    .asf-map-container {
+        height: 60%; /* Take approximately 60% of the height */
+        order: 1; /* Move to the top */
+    }
+    
+    /* Adjust modal size for mobile */
+    .asf-modal-container {
+        width: 95%;
+        height: 80%;
+    }
+    
+    /* Make zone items more compact */
+    .asf-zone-item {
+        padding: 8px;
+        margin-bottom: 8px;
+    }
+    
+    /* Smaller font sizes */
+    .asf-title {
+        font-size: 16px;
+        padding-bottom: 10px;
+    }
+    
+    /* Optimize for touch by adding more space between touchable elements */
+    .asf-zone-header {
+        padding: 5px 0;
+    }
+    
+    /* Make the modal close button easier to tap */
+    .asf-modal-close-btn {
+        width: 44px;
+        height: 44px;
+    }
+}
+
+/* For very small devices */
+@media (max-width: 480px) {
+    .asf-sidebar {
+        height: 45%; /* A bit more space for content on very small screens */
+    }
+    
+    .asf-map-container {
+        height: 55%;
     }
 }
 

@@ -22,7 +22,6 @@ export default function RegistrationForm() {
 	const [errors, setErrors] = useState({});
 	const [locationLoading, setLocationLoading] = useState(false);
 	const [locationError, setLocationError] = useState("");
-	const [hogInputType, setHogInputType] = useState("input"); // "input" or "dropdown"
 	const [showCamera, setShowCamera] = useState(false);
 	const [cameraReady, setCameraReady] = useState(false);
 	const [loading, setLoading] = useState(false);

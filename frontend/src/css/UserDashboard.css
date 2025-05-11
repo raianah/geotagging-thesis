@@ -31,7 +31,7 @@
 }
 
 .dashboard-wrapper {
-    min-height: calc(100vh - 4.5rem);
+    min-height: calc(100vh - 5.5rem);
     background-color: var(--background-color);
     color: var(--text-color);
     font-family: 'Inter', sans-serif;
@@ -40,7 +40,6 @@
 }
 
 .user-dashboard-container {
-    max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
 }
@@ -160,7 +159,7 @@
 .action-button {
     flex: 1;
     padding: 12px;
-    background-color: var(--primary-light);
+    background-color: #ff6b6b;
     color: white;
     border: none;
     border-radius: 8px;
@@ -549,4 +548,335 @@ input:focus, select:focus {
     .action-button {
         width: 100%;
     }
+}
+
+.location-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.location-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.ud-location-btn {
+    flex: 1;
+    padding: 10px;
+    background-color: #ff6b6b;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ud-location-btn:hover {
+    background-color: #ff5252;
+}
+
+.ud-location-btn:active {
+    transform: translateY(1px);
+}
+
+.ud-location-btn:disabled {
+    background-color: var(--border-color);
+    cursor: not-allowed;
+    transform: none;
+}
+
+.camera-btn {
+    background-color: var(--accent-color);
+}
+
+.camera-btn:hover {
+    background-color: #e88c1e;
+}
+
+.location-coords {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-top: 4px;
+}
+
+.error-message {
+    color: var(--danger-color);
+    font-size: 13px;
+    margin-top: 4px;
+}
+
+/* Hogs Management */
+.hogs-list {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px;
+    margin-bottom: 10px;
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.dark-mode .hogs-list {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.no-hogs {
+    text-align: center;
+    color: var(--text-dark);
+    font-style: italic;
+    font-size: 14px;
+    padding: 12px;
+    margin: 0;
+}
+
+.hog-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid var(--border-color);
+    animation: fadeIn 0.3s ease;
+}
+
+.hog-item:last-child {
+    border-bottom: none;
+}
+
+.hog-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.hog-breed {
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.hog-details {
+    font-size: 12px;
+    color: var(--text-dark);
+}
+
+.remove-hog-btn {
+    background: transparent;
+    border: none;
+    color: var(--danger-color);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.remove-hog-btn:hover {
+    background-color: rgba(231, 76, 60, 0.1);
+}
+
+.ud-add-hog-btn {
+    padding: 10px;
+    background-color: #ff6b6b;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+}
+
+.ud-add-hog-btn:hover {
+    background-color: #ff5252;
+}
+
+.ud-add-hog-btn:active {
+    transform: translateY(1px);
+}
+
+/* Camera Modal */
+.camera-container {
+    width: 100%;
+    overflow: hidden;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.camera-container video {
+    width: 100%;
+    height: auto;
+    background-color: #000;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.camera-actions {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 20px 20px;
+}
+
+.capture-btn {
+    background-color: var(--success-color);
+    border: none;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.capture-btn:hover {
+    background-color: #27ae60;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.capture-btn:active {
+    transform: translateY(1px);
+}
+
+.photo-upload-container {
+    margin-bottom: 16px;
+}
+
+.photo-upload-input {
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+.photo-previews {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.photo-preview {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.photo-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.remove-photo-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.remove-photo-btn:hover {
+    background-color: var(--danger-color);
+}
+
+.no-photos {
+    text-align: center;
+    color: var(--text-light);
+    font-style: italic;
+    font-size: 14px;
+    padding: 8px;
+    margin: 10px 0;
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.dark-mode .no-photos {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.slide-notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1050;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 350px;
+}
+
+.slide-notification {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 15px;
+    border-radius: 8px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+    animation: slide-in-right 0.3s forwards;
+    overflow: hidden;
+}
+
+.slide-notification-success {
+    background-color: #d4edda;
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+
+.slide-notification-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+}
+
+.slide-notification-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+}
+
+.slide-notification-content {
+    flex: 1;
+    padding-right: 10px;
+}
+
+.slide-notification-close {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+}
+
+.slide-notification-close:hover {
+    opacity: 1;
 }

@@ -1,4 +1,5 @@
 // Centralized API utility for frontend
+import axios from "axios";
 const API_BASE = "http://localhost:3000";
 
 function getToken() {
@@ -66,6 +67,46 @@ export function getPendingAccounts() {
 export function updateAccountStatus(uid, status) {
     return apiRequest(`/accounts/${uid}/status`, "PUT", { status });
 }
+
+export function updatePassword(uid, passwordData) {
+    return apiRequest(`/accounts/${uid}/changePassword`, "PUT", { passwordData });
+
+    // try {
+    //     const token = localStorage.getItem('token'); // Assuming you store the auth token in localStorage
+
+        
+    //     const response = await axios({
+    //         method: 'PUT',
+    //         url: `${process.env.REACT_APP_API_URL}/api/users/password`,
+    //         headers: {
+    //         'Content-Type': 'application/json',
+    //         'Authorization': `Bearer ${token}`
+    //         },
+    //         data: {
+    //         currentPassword: passwordData.currentPassword,
+    //         newPassword: passwordData.newPassword
+    //         }
+    //     });
+        
+    //     // Return the data from the response
+    //     return response.data;
+    //     } catch (error) {
+    //     if (error.response) {
+    //         // web server responded with a status code outside the range of 2xx
+    //         if (error.response.status === 401) {
+    //             throw new Error('Current password is incorrect');
+    //         } else if (error.response.status === 400) {
+    //             throw new Error(error.response.data.message || 'Invalid password format');
+    //         } else {
+    //             throw new Error('Server error. Please try again later.');
+    //         }
+    //     } else if (error.request) {
+    //         throw new Error('No response from server. Please check your connection.');
+    //     } else {
+    //         throw new Error('Failed to update password: ' + error.message);
+    //     }
+    // }
+};
 
 // Dashboard
 export function getDashboardData() {

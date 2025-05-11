@@ -1,10 +1,11 @@
 import axios from "axios";
 import React, { useState, useRef, useEffect } from "react";
+import { RiLockPasswordLine } from "react-icons/ri";
 import { IoMdClose } from "react-icons/io";
 import { MdVerified, MdErrorOutline } from "react-icons/md";
 import { BiZoomIn, BiZoomOut } from "react-icons/bi";
 import { FaCamera } from "react-icons/fa";
-import { getProfile, updateProfile } from "../services/api";
+import { getProfile, updateProfile, updatePassword } from "../services/api";
 import "../css/AccountSettings.css";
 
 const AccountSettings = ({ isOpen, onClose, user }) => {
@@ -23,6 +24,19 @@ const AccountSettings = ({ isOpen, onClose, user }) => {
         phone: '',
         profilePicture: null
     });
+    const [passwordData, setPasswordData] = useState({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+    });
+    const [passwordErrors, setPasswordErrors] = useState({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+    });
+    const [showPasswordSection, setShowPasswordSection] = useState(false);
+    const [notifications, setNotifications] = useState([]);
+    const [notificationId, setNotificationId] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
@@ -110,6 +124,115 @@ const AccountSettings = ({ isOpen, onClose, user }) => {
             ...profileData,
             [name]: value
         });
+    };
+
+    const handlePasswordChange = (e) => {
+        const { name, value } = e.target;
+        setPasswordData({
+            ...passwordData,
+            [name]: value
+        });
+        
+        // Clear specific error when user starts typing
+        if (passwordErrors[name]) {
+            setPasswordErrors({
+                ...passwordErrors,
+                [name]: ''
+            });
+        }
+    };
+
+    const validatePasswordData = () => {
+        const errors = {};
+        
+        if (!passwordData.currentPassword) {
+            errors.currentPassword = 'Current password is required';
+        }
+        
+        if (!passwordData.newPassword) {
+            errors.newPassword = 'New password is required';
+        } else if (passwordData.newPassword.length < 8) {
+            errors.newPassword = 'Password must be at least 8 characters';
+        } else if (passwordData.newPassword === passwordData.currentPassword) {
+            errors.newPassword = 'New password must be different from current password';
+        }
+        
+        if (!passwordData.confirmPassword) {
+            errors.confirmPassword = 'Please confirm your new password';
+        } else if (passwordData.confirmPassword !== passwordData.newPassword) {
+            errors.confirmPassword = 'Passwords do not match';
+        }
+        
+        setPasswordErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
+
+    const handlePasswordUpdate = async () => {
+        if (!validatePasswordData()) {
+            return;
+        }
+        
+        setLoading(true);
+        try {
+            await updatePassword({
+                currentPassword: passwordData.currentPassword,
+                newPassword: passwordData.newPassword
+            });
+            
+            // Reset password fields
+            setPasswordData({
+                currentPassword: '',
+                newPassword: '',
+                confirmPassword: ''
+            });
+            
+            // Close password section
+            setShowPasswordSection(false);
+            
+            // Show success notification
+            showNotification('Password updated successfully', 'success');
+            setLoading(false);
+        } catch (err) {
+            setLoading(false);
+            
+            // Handle specific errors
+            if (err.response && err.response.status === 401) {
+                setPasswordErrors({
+                    ...passwordErrors,
+                    currentPassword: 'Current password is incorrect'
+                });
+            } else {
+                showNotification('Failed to update password: ' + err.message, 'error');
+            }
+        }
+    };
+    
+    const showNotification = (message, type = 'info') => {
+        const id = notificationId + 1;
+        setNotificationId(id);
+        
+        const newNotification = {
+            id,
+            message,
+            type,
+            timestamp: new Date()
+        };
+        
+        setNotifications([...notifications, newNotification]);
+        
+        // Auto-remove notification after 5 seconds
+        setTimeout(() => {
+            setNotifications(notifications => 
+                notifications.filter(notification => notification.id !== id)
+            );
+        }, 5000);
+    };
+    
+    const removeNotification = (id) => {
+        setNotifications(notifications => 
+            notifications.filter(notification => notification.id !== id)
+        );
     };
 
     const handleFileSelect = (e) => {
@@ -398,9 +521,9 @@ const AccountSettings = ({ isOpen, onClose, user }) => {
         ) {
             setIsEmailVerified(true);
             setShowEmailVerificationInput(false);
-            alert("Email verified successfully!");
+            showNotification("Email verified successfully!", "success");
         } else {
-            alert("Verification failed. Please check the code and email.");
+            showNotification("Verification failed. Please check the code and email.", "error");
         }
     };
 
@@ -435,9 +558,9 @@ const AccountSettings = ({ isOpen, onClose, user }) => {
         ) {
             setIsPhoneVerified(true);
             setShowPhoneVerificationInput(false);
-            alert("Phone number verified successfully!");
+            showNotification("Phone number verified successfully!", "success");
         } else {
-            alert("Verification failed. Please check the code and phone number.");
+            showNotification("Verification failed. Please check the code and phone number.", "error");
         }
     };
 
@@ -499,6 +622,13 @@ const AccountSettings = ({ isOpen, onClose, user }) => {
         }
     };
 
+    const handleDeleteAccount = () => {
+        if(window.confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+            // Call delete account API here
+            showNotification("Account deletion requested. You will receive a confirmation email.", "info");
+        }
+    };
+
     // Helper functions for verification status
     const isCurrentEmailVerified = profileData.email === originalProfileData.email && isEmailVerified;
     const isCurrentPhoneVerified = profileData.phone === originalProfileData.phone && isPhoneVerified;
@@ -507,6 +637,24 @@ const AccountSettings = ({ isOpen, onClose, user }) => {
 
     return (
         <div className="modal-overlay">
+            <div className="notification-container">
+                {notifications.map(notification => (
+                    <div 
+                        key={notification.id} 
+                        className={`notification notification-${notification.type}`}
+                    >
+                        <div className="notification-content">
+                            {notification.message}
+                        </div>
+                        <button 
+                            className="notification-close"
+                            onClick={() => removeNotification(notification.id)}
+                        >
+                            ×
+                        </button>
+                    </div>
+                ))}
+            </div>
             <div className="account-settings-modal">
                 <div className="modal-header">
                     <h2>Account Settings</h2>
@@ -610,7 +758,7 @@ const AccountSettings = ({ isOpen, onClose, user }) => {
                                 </div>
 
                                 <div className="form-group">
-                                <label>Name (Not Editable)</label>
+                                <label>Full Name</label>
                                 <div className="name-fields">
                                     <input 
                                     type="text" 
@@ -697,23 +845,78 @@ const AccountSettings = ({ isOpen, onClose, user }) => {
                                 )}
                                 </div>
 
-                                <div className="delete-account-section">
-                                    <button 
-                                        className="delete-account-button" 
-                                        onClick={() => {
-                                        if(window.confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
-                                            // Call delete account API here
-                                            alert("Account deletion requested. You will receive a confirmation email.");
-                                        }
-                                        }}
-                                    >
-                                        Delete My Account
-                                    </button>
+                                <div className="form-group password-section">
+                                    <div className="password-section-header" onClick={() => setShowPasswordSection(!showPasswordSection)}>
+                                        <div className="password-section-title">
+                                            <RiLockPasswordLine />
+                                            <span>Change Password</span>
+                                        </div>
+                                        <div className="password-toggle">
+                                            {showPasswordSection ? '−' : '+'}
+                                        </div>
+                                    </div>
+                                    
+                                    {showPasswordSection && (
+                                        <div className="password-form">
+                                            <div className="form-group">
+                                                <label>Current Password</label>
+                                                <input 
+                                                    type="password"
+                                                    name="currentPassword"
+                                                    value={passwordData.currentPassword}
+                                                    onChange={handlePasswordChange}
+                                                    disabled={loading}
+                                                />
+                                                {passwordErrors.currentPassword && (
+                                                    <div className="input-error">{passwordErrors.currentPassword}</div>
+                                                )}
+                                            </div>
+                                            
+                                            <div className="form-group">
+                                                <label>New Password</label>
+                                                <input 
+                                                    type="password"
+                                                    name="newPassword"
+                                                    value={passwordData.newPassword}
+                                                    onChange={handlePasswordChange}
+                                                    disabled={loading}
+                                                />
+                                                {passwordErrors.newPassword && (
+                                                    <div className="input-error">{passwordErrors.newPassword}</div>
+                                                )}
+                                            </div>
+                                            
+                                            <div className="form-group">
+                                                <label>Confirm New Password</label>
+                                                <input 
+                                                    type="password"
+                                                    name="confirmPassword"
+                                                    value={passwordData.confirmPassword}
+                                                    onChange={handlePasswordChange}
+                                                    disabled={loading}
+                                                />
+                                                {passwordErrors.confirmPassword && (
+                                                    <div className="input-error">{passwordErrors.confirmPassword}</div>
+                                                )}
+                                            </div>
+                                            
+                                            <button 
+                                                className="update-password-button"
+                                                onClick={handlePasswordUpdate}
+                                                disabled={loading}
+                                            >
+                                                Update Password
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
 
-                                <div className="form-actions">
-                                <button className="cancel-button" onClick={onClose}>Cancel</button>
-                                <button className="save-button" onClick={handleSave}>Save Changes</button>
+                                <div className="accts-form-actions">
+                                    <button className="delete-account-button" onClick={handleDeleteAccount}>Delete My Account</button>
+                                    <div className="form-right-buttons">
+                                        <button className="cancel-button" onClick={onClose}>Cancel</button>
+                                        <button className="save-button" onClick={handleSave}>Save Changes</button>
+                                    </div>
                                 </div>
                             </div>
                         )}

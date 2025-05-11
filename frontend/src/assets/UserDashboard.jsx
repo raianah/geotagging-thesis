@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "./Navbar";
-import { AlertCircle, Plus, RefreshCw, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import CameraModal from "./CameraUD";
+import { AlertCircle, Plus, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import { getDashboardData, getProfile, addFarm } from "../services/api";
 import "../css/Navbar.css";
 import "../css/UserDashboard.css";
@@ -15,14 +16,25 @@ const UserDashboard = ({ darkMode, setDarkMode }) => {
         address: "",
         city: "Balayan",
         province: "Batangas",
-        pigCount: "",
         farmSize: "",
-        farmType: "Backyard"
+        farmType: "Backyard",
+        latitude: null,
+        longitude: null
     });
     const [accountData, setAccountData] = useState(null);
     const [farmData, setFarmData] = useState([]);
     const [profile, setProfile] = useState(null);
     const [error, setError] = useState(null);
+    const [hogs, setHogs] = useState([]);
+    const [showAddHogModal, setShowAddHogModal] = useState(false);
+    const [isGettingLocation, setIsGettingLocation] = useState(false);
+    const [isCameraOpen, setIsCameraOpen] = useState(false);
+    const [locationError, setLocationError] = useState(null);
+    const [selectedFarm, setSelectedFarm] = useState(null);
+    const [geocamImage, setGeocamImage] = useState(null);
+
+    const [notifications, setNotifications] = useState([]);
+    const [notificationId, setNotificationId] = useState(0);
 
     useEffect(() => {
         setIsLoading(true);
@@ -44,6 +56,174 @@ const UserDashboard = ({ darkMode, setDarkMode }) => {
         });
     }, []);
 
+    const formatDateForInput = (date) => {
+        const d = new Date(date);
+        let month = '' + (d.getMonth() + 1);
+        let day = '' + d.getDate();
+        const year = d.getFullYear();
+    
+        if (month.length < 2) month = '0' + month;
+        if (day.length < 2) day = '0' + day;
+    
+        return [year, month, day].join('-');
+    };
+
+    const [newHog, setNewHog] = useState({
+        breed: "Native (Backyard)",
+        gender: "Male",
+        birthday: formatDateForInput(new Date()),
+        photos: []
+    });
+    
+    // Add these handler functions
+    const handleHogInputChange = (e) => {
+        const { name, value } = e.target;
+        setNewHog({
+            ...newHog,
+            [name]: value
+        });
+    };
+    
+    const handlePhotoUpload = (e) => {
+        const files = Array.from(e.target.files);
+        
+        if (files.length > 0) {
+            // Limit to 2 photos
+            const selectedFiles = files.slice(0, Math.min(files.length, 2 - newHog.photos.length));
+            
+            // Convert files to data URLs
+            const filePromises = selectedFiles.map(file => {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.readAsDataURL(file);
+                });
+            });
+            
+            Promise.all(filePromises).then(dataUrls => {
+                setNewHog({
+                    ...newHog,
+                    photos: [...newHog.photos, ...dataUrls].slice(0, 2) // Ensure max 2 photos
+                });
+            });
+        }
+    };
+    
+    const removePhoto = (index) => {
+        const updatedPhotos = [...newHog.photos];
+        updatedPhotos.splice(index, 1);
+        setNewHog({
+            ...newHog,
+            photos: updatedPhotos
+        });
+    };
+    
+    const handleAddHog = () => {
+        setHogs([...hogs, { ...newHog, id: Date.now() }]);
+        setNewHog({
+            breed: "Native (Backyard)",
+            gender: "Male",
+            birthday: formatDateForInput(new Date()),
+            photos: []
+        });
+        setShowAddHogModal(false);
+    };
+    
+    const removeHog = (id) => {
+        setHogs(hogs.filter(hog => hog.id !== id));
+    };
+
+    const getCurrentLocation = () => {
+        setIsGettingLocation(true);
+        setLocationError(null);
+        
+        if (!navigator.geolocation) {
+            setLocationError('Geolocation is not supported by your browser');
+            setIsGettingLocation(false);
+            return;
+        }
+        
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                try {
+                    const { latitude, longitude } = position.coords;
+                    // Reverse geocoding
+                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`);
+                    const data = await response.json();
+                    
+                    setNewBranchData({
+                        ...newBranchData,
+                        address: data.display_name || `${data.address?.road || ''} ${data.address?.house_number || ''}`.trim(),
+                        city: data.address?.city || data.address?.town || data.address?.village || newBranchData.city,
+                        province: data.address?.state || data.address?.province || newBranchData.province,
+                        latitude,
+                        longitude
+                    });
+                    setIsGettingLocation(false);
+                } catch (err) {
+                    setLocationError('Failed to get location details');
+                    setIsGettingLocation(false);
+                    console.error("Reverse geocoding error:", err);
+                }
+            },
+            (error) => {
+                setLocationError(`Error getting location: ${error.message}`);
+                setIsGettingLocation(false);
+                console.error("Geolocation error:", error);
+            }
+        );
+    };
+    
+    const openGeoCamera = () => {
+        setIsCameraOpen(true);
+    };
+    
+    const handleCameraCapture = async (imageBlob) => {
+        setIsCameraOpen(false);
+        setIsGettingLocation(true);
+        
+        try {
+            // Store the image
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setGeocamImage(e.target.result);
+            };
+            reader.readAsDataURL(imageBlob);
+            
+            // In real implementation, you would extract EXIF data from the image
+            // For demo, we'll just use current position
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const { latitude, longitude } = position.coords;
+                    // Same reverse geocoding logic as getCurrentLocation
+                    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`);
+                    const data = await response.json();
+                    
+                    setNewBranchData({
+                        ...newBranchData,
+                        address: data.display_name || `${data.address?.road || ''} ${data.address?.house_number || ''}`.trim(),
+                        city: data.address?.city || data.address?.town || data.address?.village || newBranchData.city,
+                        province: data.address?.state || data.address?.province || newBranchData.province,
+                        latitude,
+                        longitude
+                    });
+                    setIsGettingLocation(false);
+                },
+                (error) => {
+                    setLocationError(`Error getting location from image: ${error.message}`);
+                    setIsGettingLocation(false);
+                }
+            );
+        } catch (err) {
+            setLocationError('Failed to process image location');
+            setIsGettingLocation(false);
+        }
+    };
+    
+    const closeCameraModal = () => {
+        setIsCameraOpen(false);
+    };
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setNewBranchData({
@@ -52,23 +232,56 @@ const UserDashboard = ({ darkMode, setDarkMode }) => {
         });
     };
 
+    const showNotification = (message, type = 'info') => {
+        const id = notificationId + 1;
+        setNotificationId(id);
+        
+        const newNotification = {
+            id,
+            message,
+            type,
+            timestamp: new Date()
+        };
+        
+        setNotifications([...notifications, newNotification]);
+        
+        // Auto-remove notification after 5 seconds
+        setTimeout(() => {
+            setNotifications(notifications => 
+                notifications.filter(notification => notification.id !== id)
+            );
+        }, 5000);
+    };
+
+    const removeNotification = (id) => {
+        setNotifications(notifications => 
+            notifications.filter(notification => notification.id !== id)
+        );
+    };
+
     const handleAddBranch = async (e) => {
         e.preventDefault();
         setError(null);
         try {
-            // Call backend to add a new farm
-            await addFarm(newBranchData);
-            alert("New farm has been added successfully!");
+            // Add hogs array to the data being sent
+            await addFarm({
+                ...newBranchData,
+                hogs: hogs
+            });
+            showNotification("New farm has been added successfully!", "success")
             setShowAddBranchModal(false);
             setNewBranchData({
                 branchName: "",
                 address: "",
                 city: "Balayan",
                 province: "Batangas",
-                pigCount: "",
                 farmSize: "",
-                farmType: "Backyard"
+                farmType: "Backyard",
+                latitude: null,
+                longitude: null
             });
+            setHogs([]);
+            setGeocamImage(null);
             // Refresh dashboard data
             setIsLoading(true);
             const dashboard = await getDashboardData();
@@ -123,6 +336,25 @@ const UserDashboard = ({ darkMode, setDarkMode }) => {
                     phoneVerified: profile.phoneVerified
                 } : undefined}
             />
+
+            <div className="slide-notification-container">
+                {notifications.map(notification => (
+                    <div 
+                        key={notification.id} 
+                        className={`slide-notification notification-${notification.type}`}
+                    >
+                        <div className="slide-notification-content">
+                            {notification.message}
+                        </div>
+                        <button 
+                            className="slide-notification-close"
+                            onClick={() => removeNotification(notification.id)}
+                        >
+                            ×
+                        </button>
+                    </div>
+                ))}
+            </div>
 
             {isLoading ? (
                 <div className="loading-indicator">Loading...</div>
@@ -180,13 +412,43 @@ const UserDashboard = ({ darkMode, setDarkMode }) => {
                             <h2>Your Farms</h2>
                             <div className="farms-summary">
                                 {farmData.map(farm => (
-                                    <div key={farm.id} className="farm-card">
+                                    <div key={farm.id} className={`farm-card ${selectedFarm === farm.id ? 'selected' : ''}`} onClick={() => setSelectedFarm(selectedFarm === farm.id ? null : farm.id)}>
                                         <h3>{farm.name}</h3>
                                         <div className="farm-details">
                                             <p><strong>Location:</strong> {farm.location}</p>
                                             <p><strong>Pigs:</strong> {farm.pigCount}</p>
                                             <p><strong>Type:</strong> {farm.farmType}</p>
                                         </div>
+                                        
+                                        {selectedFarm === farm.id && farm.hogs && (
+                                            <div className="farm-hogs-detail">
+                                                <h4>Hogs Information</h4>
+                                                <div className="hogs-list-detail">
+                                                    {farm.hogs.map((hog, index) => (
+                                                        <div key={hog.id || index} className="hog-detail-item">
+                                                            <div className="hog-detail-info">
+                                                                <span className="hog-detail-title">Hog #{index + 1}</span>
+                                                                <span className="hog-detail-text">
+                                                                    {hog.breed} • {hog.gender} • Born: {new Date(hog.birthday).toLocaleDateString()}
+                                                                </span>
+                                                            </div>
+                                                            {hog.photos && hog.photos.length > 0 && (
+                                                                <div className="hog-photos">
+                                                                    {hog.photos.map((photo, photoIndex) => (
+                                                                        <img 
+                                                                            key={photoIndex}
+                                                                            src={photo} 
+                                                                            alt={`Hog ${index + 1} photo ${photoIndex + 1}`}
+                                                                            className="hog-photo-thumbnail"
+                                                                        />
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -280,7 +542,7 @@ const UserDashboard = ({ darkMode, setDarkMode }) => {
                         </div>
                         <form onSubmit={handleAddBranch}>
                             <div className="form-group">
-                                <label htmlFor="branchName">Farm Name</label>
+                                <label htmlFor="branchName">Farm Name<span className="required">*</span></label>
                                 <input
                                     type="text"
                                     id="branchName"
@@ -292,42 +554,93 @@ const UserDashboard = ({ darkMode, setDarkMode }) => {
                                 />
                             </div>
                             <div className="form-group">
-                                <label htmlFor="address">Address</label>
-                                <input
-                                    type="text"
-                                    id="address"
-                                    name="address"
-                                    value={newBranchData.address}
-                                    onChange={handleInputChange}
-                                    placeholder="Enter street address"
-                                    required
-                                />
+                                <label htmlFor="address">Address<span className="required">*</span></label>
+                                <div className="location-input-group">
+                                    {newBranchData.address && (
+                                        <input
+                                            type="text"
+                                            id="address"
+                                            name="address"
+                                            value={newBranchData.address}
+                                            onChange={handleInputChange}
+                                            disabled
+                                            required
+                                        />
+                                    )}
+                                    <div className="location-buttons">
+                                        <button 
+                                            type="button" 
+                                            className="ud-location-btn" 
+                                            onClick={getCurrentLocation}
+                                            disabled={isGettingLocation}
+                                        >
+                                            {isGettingLocation ? 'Getting...' : 'Get Current Location'}
+                                        </button>
+                                        <button 
+                                            type="button" 
+                                            className="ud-location-btn" 
+                                            onClick={openGeoCamera}
+                                            disabled={isGettingLocation}
+                                        >
+                                            GeoCamera
+                                        </button>
+                                    </div>
+                                    {locationError && <p className="error-message">{locationError}</p>}
+                                    {newBranchData.latitude && newBranchData.longitude && !newBranchData.address && (
+                                        <p className="location-coords">
+                                            Coordinates: {newBranchData.latitude.toFixed(4)}, {newBranchData.longitude.toFixed(4)}
+                                        </p>
+                                    )}
+                                    
+                                    {/* Display geocam image when available */}
+                                    {geocamImage && (
+                                        <div className="geocam-image-container">
+                                            <h4>GeoCamera Image</h4>
+                                            <img 
+                                                src={geocamImage} 
+                                                alt="Location photo from GeoCamera" 
+                                                className="geocam-image"
+                                            />
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                             <div className="form-group">
-                                <label htmlFor="city">City/Town</label>
-                                <input
-                                    type="text"
-                                    id="city"
-                                    name="city"
-                                    value={newBranchData.city}
-                                    onChange={handleInputChange}
-                                    required
-                                />
+                                <label>Hogs List<span className="required">*</span></label>
+                                <div className="hogs-list">
+                                    {hogs.length === 0 ? (
+                                        <p className="no-hogs">No hogs added yet. Click the button below to add a hog.</p>
+                                    ) : (
+                                        hogs.map((hog, index) => (
+                                            <div key={hog.id} className="hog-item">
+                                                <div className="hog-info">
+                                                    <span className="hog-breed">Hog #{index + 1}</span>
+                                                    <span className="hog-details">
+                                                        {hog.breed} • {hog.gender} • Born: {new Date(hog.birthday).toLocaleDateString()}
+                                                    </span>
+                                                </div>
+                                                <button 
+                                                    type="button" 
+                                                    className="remove-hog-btn" 
+                                                    onClick={() => removeHog(hog.id)}
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                                <button 
+                                    type="button" 
+                                    className="ud-add-hog-btn" 
+                                    onClick={() => setShowAddHogModal(true)}
+                                >
+                                    <Plus size={16} />
+                                    Add Hog
+                                </button>
                             </div>
                             <div className="form-group">
-                                <label htmlFor="pigCount">Number of Pigs</label>
-                                <input
-                                    type="number"
-                                    id="pigCount"
-                                    name="pigCount"
-                                    value={newBranchData.pigCount}
-                                    onChange={handleInputChange}
-                                    placeholder="How many pigs?"
-                                    required
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="farmSize">Farm Size (hectares)</label>
+                                <label htmlFor="farmSize">Farm Size (in hectares)<span className="required">*</span></label>
                                 <input
                                     type="number"
                                     id="farmSize"
@@ -336,11 +649,12 @@ const UserDashboard = ({ darkMode, setDarkMode }) => {
                                     onChange={handleInputChange}
                                     placeholder="Size in hectares"
                                     step="0.1"
+                                    min="0"
                                     required
                                 />
                             </div>
                             <div className="form-group">
-                                <label htmlFor="farmType">Farm Type</label>
+                                <label htmlFor="farmType">Farm Type<span className="required">*</span></label>
                                 <select
                                     id="farmType"
                                     name="farmType"
@@ -365,6 +679,128 @@ const UserDashboard = ({ darkMode, setDarkMode }) => {
                     </div>
                 </div>
             )}
+
+            {/* Add Hog Modal */}
+            {showAddHogModal && (
+                <div className="modal-overlay" onClick={() => setShowAddHogModal(false)}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h2>Add New Hog</h2>
+                            <button className="close-btn" onClick={() => setShowAddHogModal(false)}>×</button>
+                        </div>
+                        <form onSubmit={(e) => {
+                            e.preventDefault();
+                            handleAddHog();
+                        }}>
+                            <div className="form-group">
+                                <label htmlFor="breed">Breed</label>
+                                <select
+                                    id="breed"
+                                    name="breed"
+                                    value={newHog.breed}
+                                    onChange={handleHogInputChange}
+                                    required
+                                >
+                                    <option value="Native (Backyard)">Native (Backyard)</option>
+                                    <option value="Large White">Large White</option>
+                                    <option value="Landrace">Landrace</option>
+                                    <option value="Duroc">Duroc</option>
+                                    <option value="Hampshire">Hampshire</option>
+                                    <option value="Chester White">Chester White</option>
+                                    <option value="Berkshire">Berkshire</option>
+                                    <option value="Pietrain">Pietrain</option>
+                                    <option value="Large Black">Large Black</option>
+                                    <option value="Crossbreed">Crossbreed</option>
+                                </select>
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="gender">Gender</label>
+                                <select
+                                    id="gender"
+                                    name="gender"
+                                    value={newHog.gender}
+                                    onChange={handleHogInputChange}
+                                    required
+                                >
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                </select>
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="birthday">Birthday</label>
+                                <input
+                                    type="date"
+                                    id="birthday"
+                                    name="birthday"
+                                    value={newHog.birthday}
+                                    onChange={handleHogInputChange}
+                                    required
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label>Photos (Max 2)</label>
+                                <div className="photo-upload-container">
+                                    {newHog.photos.length < 2 && (
+                                        <div className="photo-upload-input">
+                                            <input
+                                                type="file"
+                                                id="hogPhotos"
+                                                accept="image/*"
+                                                onChange={handlePhotoUpload}
+                                                style={{ display: 'none' }}
+                                            />
+                                            <label htmlFor="hogPhotos" className="ud-location-btn">
+                                                Upload Photo
+                                            </label>
+                                        </div>
+                                    )}
+                                    
+                                    {newHog.photos.length > 0 && (
+                                        <div className="photo-previews">
+                                            {newHog.photos.map((photo, index) => (
+                                                <div key={index} className="photo-preview">
+                                                    <img src={photo} alt={`Hog photo ${index + 1}`} />
+                                                    <button 
+                                                        type="button" 
+                                                        className="remove-photo-btn"
+                                                        onClick={() => removePhoto(index)}
+                                                    >
+                                                        ×
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                    
+                                    {newHog.photos.length === 0 && (
+                                        <p className="no-photos">No photos added yet. You must add at least 1 photo.</p>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="form-actions">
+                                <button type="button" className="cancel-btn" onClick={() => setShowAddHogModal(false)}>
+                                    Cancel
+                                </button>
+                                <button 
+                                    type="submit" 
+                                    className="submit-btn"
+                                    disabled={newHog.photos.length === 0}
+                                >
+                                    Add Hog
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Camera Modal Component */}
+            <CameraModal 
+                isOpen={isCameraOpen} 
+                onCapture={handleCameraCapture} 
+                onClose={closeCameraModal} 
+            />
+
         </div>
     );
 };
