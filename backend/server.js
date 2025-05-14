@@ -1,6 +1,4 @@
 import express from "express";
-import sqlite3 from "sqlite3";
-import { open } from "sqlite";
 import dotenv from "dotenv";
 import cors from "cors";
 import bcrypt from "bcrypt";
@@ -10,6 +8,7 @@ import { authenticateToken } from "./authMiddleware.js";
 import crypto from "crypto";
 import fetch from "node-fetch";
 import rateLimit from 'express-rate-limit';
+import pool from './config/database.js';
 
 dotenv.config();
 
@@ -58,177 +57,15 @@ app.use((req, res, next) => {
     next();
 });
 
-let db;
-
-// Initialize SQLite DB
-async function initDB() {
-    db = await open({
-        filename: './temp.db',
-        driver: sqlite3.Database
-    });
-
-    // Create users table with PostgreSQL-compatible structure
-    await db.exec(`
-        CREATE TABLE IF NOT EXISTS blnbtghog_owners (
-            uid VARCHAR(36) PRIMARY KEY,
-            fullName VARCHAR(255) NOT NULL,
-            emailAddress VARCHAR(255) UNIQUE NOT NULL,
-            password VARCHAR(255) NOT NULL,
-            contactNumber VARCHAR(20) NOT NULL,
-            userCreated TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            profilePicture VARCHAR(255),
-            role VARCHAR(20) NOT NULL DEFAULT 'user',
-            status VARCHAR(20) NOT NULL DEFAULT 'pending',
-            location TEXT,
-            latitude DECIMAL(10, 8),
-            longitude DECIMAL(11, 8),
-            validIdType VARCHAR(50),
-            validIdUrl VARCHAR(255),
-            lastLogin TIMESTAMP,
-            isActive BOOLEAN DEFAULT true,
-            verificationToken VARCHAR(255),
-            verificationTokenExpiry TIMESTAMP,
-            resetPasswordToken VARCHAR(255),
-            resetPasswordExpiry TIMESTAMP,
-            CONSTRAINT valid_latitude CHECK (latitude >= -90 AND latitude <= 90),
-            CONSTRAINT valid_longitude CHECK (longitude >= -180 AND longitude <= 180),
-            CONSTRAINT valid_phone CHECK (contactNumber LIKE '+639%')
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_email ON blnbtghog_owners(emailAddress);
-        CREATE INDEX IF NOT EXISTS idx_status ON blnbtghog_owners(status);
-        CREATE INDEX IF NOT EXISTS idx_role ON blnbtghog_owners(role);
-        CREATE INDEX IF NOT EXISTS idx_verification_token ON blnbtghog_owners(verificationToken);
-    `);
-
-    // Create farms table with improved structure
-    await db.exec(`
-        CREATE TABLE IF NOT EXISTS farms (
-            id VARCHAR(36) PRIMARY KEY,
-            ownerUid VARCHAR(36) NOT NULL,
-            branchName VARCHAR(255) NOT NULL,
-            address TEXT NOT NULL,
-            city VARCHAR(100) NOT NULL,
-            province VARCHAR(100) NOT NULL,
-            pigCount INTEGER NOT NULL DEFAULT 0,
-            farmSize DECIMAL(10, 2) NOT NULL,
-            farmType VARCHAR(50) NOT NULL,
-            createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            status VARCHAR(20) NOT NULL DEFAULT 'active',
-            latitude DECIMAL(10, 8),
-            longitude DECIMAL(11, 8),
-            FOREIGN KEY(ownerUid) REFERENCES blnbtghog_owners(uid) ON DELETE CASCADE,
-            CONSTRAINT valid_farm_latitude CHECK (latitude >= -90 AND latitude <= 90),
-            CONSTRAINT valid_farm_longitude CHECK (longitude >= -180 AND longitude <= 180),
-            CONSTRAINT valid_pig_count CHECK (pigCount >= 0),
-            CONSTRAINT valid_farm_size CHECK (farmSize > 0)
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_farm_owner ON farms(ownerUid);
-        CREATE INDEX IF NOT EXISTS idx_farm_status ON farms(status);
-        CREATE INDEX IF NOT EXISTS idx_farm_location ON farms(city, province);
-    `);
-
-    // Create ASF outbreak reports table with improved structure
-    await db.exec(`
-        CREATE TABLE IF NOT EXISTS asf_outbreak_reports (
-            id VARCHAR(36) PRIMARY KEY,
-            dateReported TIMESTAMP NOT NULL,
-            barangay VARCHAR(100) NOT NULL,
-            municipality VARCHAR(100) NOT NULL,
-            province VARCHAR(100) NOT NULL,
-            reportedByUid VARCHAR(36) NOT NULL,
-            description TEXT NOT NULL,
-            status VARCHAR(20) NOT NULL DEFAULT 'pending',
-            createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            latitude DECIMAL(10, 8) NOT NULL,
-            longitude DECIMAL(11, 8) NOT NULL,
-            severity VARCHAR(20) NOT NULL DEFAULT 'low',
-            affectedPigCount INTEGER NOT NULL DEFAULT 0,
-            isVerified BOOLEAN DEFAULT false,
-            verifiedByUid VARCHAR(36),
-            verificationDate TIMESTAMP,
-            FOREIGN KEY(reportedByUid) REFERENCES blnbtghog_owners(uid) ON DELETE SET NULL,
-            FOREIGN KEY(verifiedByUid) REFERENCES blnbtghog_owners(uid) ON DELETE SET NULL,
-            CONSTRAINT valid_report_latitude CHECK (latitude >= -90 AND latitude <= 90),
-            CONSTRAINT valid_report_longitude CHECK (longitude >= -180 AND longitude <= 180),
-            CONSTRAINT valid_affected_count CHECK (affectedPigCount >= 0),
-            CONSTRAINT valid_severity CHECK (severity IN ('low', 'medium', 'high', 'critical'))
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_report_date ON asf_outbreak_reports(dateReported);
-        CREATE INDEX IF NOT EXISTS idx_report_status ON asf_outbreak_reports(status);
-        CREATE INDEX IF NOT EXISTS idx_report_location ON asf_outbreak_reports(barangay, municipality, province);
-        CREATE INDEX IF NOT EXISTS idx_report_severity ON asf_outbreak_reports(severity);
-    `);
-
-    // Create audit log table for tracking changes
-    await db.exec(`
-        CREATE TABLE IF NOT EXISTS audit_logs (
-            id VARCHAR(36) PRIMARY KEY,
-            tableName VARCHAR(50) NOT NULL,
-            recordId VARCHAR(36) NOT NULL,
-            action VARCHAR(20) NOT NULL,
-            oldData TEXT,
-            newData TEXT,
-            userId VARCHAR(36),
-            timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(userId) REFERENCES blnbtghog_owners(uid) ON DELETE SET NULL,
-            CONSTRAINT valid_action CHECK (action IN ('INSERT', 'UPDATE', 'DELETE'))
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_audit_table ON audit_logs(tableName);
-        CREATE INDEX IF NOT EXISTS idx_audit_record ON audit_logs(recordId);
-        CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit_logs(timestamp);
-    `);
-
-    // Create hogs table with PostgreSQL-compatible structure
-    await db.exec(`
-        CREATE TABLE IF NOT EXISTS hogs (
-            id VARCHAR(36) PRIMARY KEY,
-            farmId VARCHAR(36) NOT NULL,
-            breed VARCHAR(100) NOT NULL,
-            gender VARCHAR(10) NOT NULL,
-            birthday DATE NOT NULL,
-            photos TEXT, -- JSON array of photo URLs/base64
-            createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(farmId) REFERENCES farms(id) ON DELETE CASCADE
-        );
-        CREATE INDEX IF NOT EXISTS idx_hog_farm ON hogs(farmId);
-    `);
-
-    // Create notifications table with improved structure
-    await db.exec(`
-        CREATE TABLE IF NOT EXISTS notifications (
-            id VARCHAR(36) PRIMARY KEY,
-            userId VARCHAR(36) NOT NULL,
-            title VARCHAR(255) NOT NULL,
-            message TEXT NOT NULL,
-            type VARCHAR(50) NOT NULL DEFAULT 'info',
-            isRead BOOLEAN DEFAULT false,
-            createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(userId) REFERENCES blnbtghog_owners(uid) ON DELETE CASCADE,
-            CONSTRAINT unique_notification_per_user UNIQUE (id, userId)
-        );
-
-        CREATE INDEX IF NOT EXISTS idx_notification_user ON notifications(userId);
-        CREATE INDEX IF NOT EXISTS idx_notification_read ON notifications(isRead);
-        CREATE INDEX IF NOT EXISTS idx_notification_created ON notifications(createdAt);
-    `);
-}
-
-// Add audit logging function
+// Audit logging function
 async function logAudit(tableName, recordId, action, oldData, newData, userId) {
     try {
-        await db.run(
-            `INSERT INTO audit_logs (id, tableName, recordId, action, oldData, newData, userId)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        await pool.query(
+            'INSERT INTO audit_logs (id, tableName, recordId, action, oldData, newData, userId) VALUES ($1, $2, $3, $4, $5, $6, $7)',
             [uuidv4(), tableName, recordId, action, JSON.stringify(oldData), JSON.stringify(newData), userId]
         );
     } catch (error) {
-        console.error('Audit logging error:', error);
+        console.error('Error logging audit:', error);
     }
 }
 
@@ -241,12 +78,16 @@ app.post("/login", async (req, res) => {
     }
 
     try {
-        const user = await db.get(`SELECT * FROM blnbtghog_owners WHERE emailAddress = ?`, [email]);
+        const { rows: users } = await pool.query(
+            'SELECT * FROM blnbtghog_owners WHERE emailAddress = $1',
+            [email]
+        );
 
-        if (!user) {
+        if (users.length === 0) {
             return res.status(401).json({ error: "Invalid credentials" });
         }
 
+        const user = users[0];
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(401).json({ error: "Invalid credentials" });
@@ -309,12 +150,12 @@ app.post("/register", async (req, res) => {
 
     try {
         // Check if email already exists
-        const existingUser = await db.get(
-            'SELECT emailAddress FROM blnbtghog_owners WHERE emailAddress = ?',
+        const { rows: existingUsers } = await pool.query(
+            'SELECT emailAddress FROM blnbtghog_owners WHERE emailAddress = $1',
             [email]
         );
 
-        if (existingUser) {
+        if (existingUsers.length > 0) {
             return res.status(400).json({ error: "Email already registered" });
         }
 
@@ -344,13 +185,8 @@ app.post("/register", async (req, res) => {
             longitude: longitude || null
         };
 
-        await db.run(
-            `INSERT INTO blnbtghog_owners (
-                uid, fullName, emailAddress, password, contactNumber, 
-                userCreated, role, validIdType, validIdUrl,
-                verificationToken, verificationTokenExpiry,
-                location, latitude, longitude
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        await pool.query(
+            'INSERT INTO blnbtghog_owners (uid, fullName, emailAddress, password, contactNumber, userCreated, role, validIdType, validIdUrl, verificationToken, verificationTokenExpiry, location, latitude, longitude) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)',
             [
                 newUser.uid, newUser.fullName, newUser.emailAddress, newUser.password,
                 newUser.contactNumber, newUser.userCreated, newUser.role,
@@ -376,8 +212,12 @@ app.post("/register", async (req, res) => {
 // Get current user profile
 app.get("/profile", authenticateToken, async (req, res) => {
     try {
-        const user = await db.get(`SELECT uid, fullName, emailAddress, contactNumber, userCreated, profilePicture, role, status FROM blnbtghog_owners WHERE uid = ?`, [req.user.uid]);
-        if (!user) return res.status(404).json({ error: "User not found" });
+        const { rows: users } = await pool.query(
+            'SELECT uid, fullName, emailAddress, contactNumber, userCreated, profilePicture, role, status FROM blnbtghog_owners WHERE uid = $1',
+            [req.user.uid]
+        );
+        if (users.length === 0) return res.status(404).json({ error: "User not found" });
+        const user = users[0];
         // Split fullName for frontend compatibility
         let firstName = '', lastName = '';
         if (user.fullName) {
@@ -403,14 +243,18 @@ app.put("/profile", authenticateToken, async (req, res) => {
     }
     try {
         // Only update provided fields
-        const user = await db.get(`SELECT * FROM blnbtghog_owners WHERE uid = ?`, [req.user.uid]);
-        if (!user) return res.status(404).json({ error: "User not found" });
+        const { rows: users } = await pool.query(
+            'SELECT * FROM blnbtghog_owners WHERE uid = $1',
+            [req.user.uid]
+        );
+        if (users.length === 0) return res.status(404).json({ error: "User not found" });
+        const user = users[0];
         const updatedFullName = fullName || user.fullName;
         const updatedEmail = emailAddress || user.emailAddress;
         const updatedPhone = contactNumber || user.contactNumber;
         const updatedProfilePicture = profilePicture || user.profilePicture;
-        await db.run(
-            `UPDATE blnbtghog_owners SET fullName = ?, emailAddress = ?, contactNumber = ?, profilePicture = ? WHERE uid = ?`,
+        await pool.query(
+            'UPDATE blnbtghog_owners SET fullName = $1, emailAddress = $2, contactNumber = $3, profilePicture = $4 WHERE uid = $5',
             [updatedFullName, updatedEmail, updatedPhone, updatedProfilePicture, req.user.uid]
         );
         res.json({ message: "Profile updated successfully" });
@@ -423,7 +267,10 @@ app.put("/profile", authenticateToken, async (req, res) => {
 app.get("/accounts", authenticateToken, async (req, res) => {
     try {
         // Only return user (hog raiser) accounts, not employees
-        const accounts = await db.all(`SELECT uid, fullName, emailAddress, contactNumber, userCreated, role, status, location, latitude, longitude FROM blnbtghog_owners WHERE LOWER(role) = 'user'`);
+        const { rows: accounts } = await pool.query(
+            'SELECT uid, fullName, emailAddress, contactNumber, userCreated, role, status, location, latitude, longitude FROM blnbtghog_owners WHERE LOWER(role) = $1',
+            ['user']
+        );
         res.json(accounts);
     } catch (err) {
         res.status(500).json({ error: "Failed to retrieve accounts" });
@@ -434,7 +281,10 @@ app.get("/accounts", authenticateToken, async (req, res) => {
 app.get("/pending-accounts", authenticateToken, async (req, res) => {
     try {
         // Only return pending user (hog raiser) accounts, not employees
-        const pending = await db.all(`SELECT uid, fullName, emailAddress, contactNumber, userCreated, role, status, location, latitude, longitude FROM blnbtghog_owners WHERE LOWER(role) = 'user' AND LOWER(status) = 'pending'`);
+        const { rows: pending } = await pool.query(
+            'SELECT uid, fullName, emailAddress, contactNumber, userCreated, role, status, location, latitude, longitude FROM blnbtghog_owners WHERE LOWER(role) = $1 AND LOWER(status) = $2',
+            ['user', 'pending']
+        );
         res.json(pending);
     } catch (err) {
         res.status(500).json({ error: "Failed to retrieve pending accounts" });
@@ -449,7 +299,10 @@ app.put("/accounts/:uid/status", authenticateToken, async (req, res) => {
         return res.status(400).json({ error: "Invalid status value" });
     }
     try {
-        await db.run(`UPDATE blnbtghog_owners SET status = ? WHERE uid = ?`, [status, uid]);
+        await pool.query(
+            'UPDATE blnbtghog_owners SET status = $1 WHERE uid = $2',
+            [status, uid]
+        );
         res.json({ message: `Account status updated to ${status}` });
     } catch (err) {
         res.status(500).json({ error: "Failed to update account status" });
@@ -480,9 +333,8 @@ app.post("/farms", authenticateToken, async (req, res) => {
         const createdAt = new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' });
         
         // Insert farm
-        await db.run(
-            `INSERT INTO farms (id, ownerUid, branchName, address, city, province, pigCount, farmSize, farmType, createdAt)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        await pool.query(
+            'INSERT INTO farms (id, ownerUid, branchName, address, city, province, pigCount, farmSize, farmType, createdAt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
             [id, req.user.uid, branchName, address, city, province, pigCount, farmSize, farmType, createdAt]
         );
 
@@ -491,9 +343,8 @@ app.post("/farms", authenticateToken, async (req, res) => {
             console.log("Processing hogs:", hogs.length);
             for (const hog of hogs) {
                 const hogId = uuidv4();
-                await db.run(
-                    `INSERT INTO hogs (id, farmId, breed, gender, birthday, photos, createdAt)
-                     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                await pool.query(
+                    'INSERT INTO hogs (id, farmId, breed, gender, birthday, photos, createdAt) VALUES ($1, $2, $3, $4, $5, $6, $7)',
                     [hogId, id, hog.breed, hog.gender, hog.birthday, JSON.stringify(hog.photos), createdAt]
                 );
             }
@@ -516,7 +367,9 @@ app.post("/farms", authenticateToken, async (req, res) => {
 app.get("/asf-outbreak-reports", authenticateToken, async (req, res) => {
     try {
         // For now, return all reports. Filter by user/scope if needed.
-        const reports = await db.all(`SELECT * FROM asf_outbreak_reports`);
+        const { rows: reports } = await pool.query(
+            'SELECT * FROM asf_outbreak_reports'
+        );
         res.json(reports);
     } catch (err) {
         res.status(500).json({ error: "Failed to retrieve ASF outbreak reports" });
@@ -532,9 +385,8 @@ app.post("/asf-outbreak-reports", authenticateToken, async (req, res) => {
     try {
         const id = uuidv4();
         const createdAt = new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' });
-        await db.run(
-            `INSERT INTO asf_outbreak_reports (id, dateReported, barangay, municipality, province, reportedByUid, description, status, createdAt)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        await pool.query(
+            'INSERT INTO asf_outbreak_reports (id, dateReported, barangay, municipality, province, reportedByUid, description, status, createdAt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
             [id, dateReported, barangay, municipality, province, req.user.uid, description, status, createdAt]
         );
         res.status(201).json({ message: "ASF outbreak report added successfully" });
@@ -547,11 +399,18 @@ app.post("/asf-outbreak-reports", authenticateToken, async (req, res) => {
 app.get("/dashboard-data", authenticateToken, async (req, res) => {
     try {
         // Get account info
-        const user = await db.get(`SELECT uid, fullName, emailAddress, contactNumber, userCreated FROM blnbtghog_owners WHERE uid = ?`, [req.user.uid]);
+        const { rows: users } = await pool.query(
+            'SELECT uid, fullName, emailAddress, contactNumber, userCreated FROM blnbtghog_owners WHERE uid = $1',
+            [req.user.uid]
+        );
+        const user = users[0];
         // Get farms for user
-        let farms = await db.all(`SELECT * FROM farms WHERE ownerUid = ?`, [req.user.uid]);
+        const { rows: farms } = await pool.query(
+            'SELECT * FROM farms WHERE ownerUid = $1',
+            [req.user.uid]
+        );
         // Add computed fields for frontend compatibility
-        farms = farms.map(farm => ({
+        const formattedFarms = farms.map(farm => ({
             ...farm,
             name: farm.branchName,
             location: `${farm.address}, ${farm.city}, ${farm.province}`
@@ -562,7 +421,9 @@ app.get("/dashboard-data", authenticateToken, async (req, res) => {
             { id: 2, title: "Vaccination Drive", content: "Free hog vaccination this May.", date: "2025-05-01" }
         ];
         // Get ASF outbreak reports count
-        const asfOutbreakCount = await db.get(`SELECT COUNT(*) as count FROM asf_outbreak_reports`);
+        const { rows: asfOutbreakCount } = await pool.query(
+            'SELECT COUNT(*) as count FROM asf_outbreak_reports'
+        );
         // Compose account info
         const accountInfo = {
             status: "Active",
@@ -573,7 +434,7 @@ app.get("/dashboard-data", authenticateToken, async (req, res) => {
             nextInspection: "2025-12-31", // Example static value, update logic as needed
             accountType: "Hog Owner" // Example static value, update logic as needed
         };
-        res.json({ accountInfo, farms, news, asfOutbreakCount: asfOutbreakCount.count });
+        res.json({ accountInfo, farms: formattedFarms, news, asfOutbreakCount: asfOutbreakCount[0].count });
     } catch (err) {
         res.status(500).json({ error: "Failed to retrieve dashboard data" });
     }
@@ -711,12 +572,16 @@ app.put("/accounts/:uid/changePassword", authenticateToken, passwordChangeLimite
 
     try {
         // Verify user exists
-        const user = await db.get(`SELECT * FROM blnbtghog_owners WHERE uid = ?`, [uid]);
-        if (!user) {
+        const { rows: users } = await pool.query(
+            'SELECT * FROM blnbtghog_owners WHERE uid = $1',
+            [uid]
+        );
+        if (users.length === 0) {
             return res.status(404).json({ error: "User not found" });
         }
 
         // Verify current password
+        const user = users[0];
         const isMatch = await bcrypt.compare(currentPassword, user.password);
         if (!isMatch) {
             return res.status(401).json({ error: "Current password is incorrect" });
@@ -733,7 +598,10 @@ app.put("/accounts/:uid/changePassword", authenticateToken, passwordChangeLimite
 
         // Hash and update new password
         const hashedPassword = await bcrypt.hash(newPassword, 10);
-        await db.run(`UPDATE blnbtghog_owners SET password = ? WHERE uid = ?`, [hashedPassword, uid]);
+        await pool.query(
+            'UPDATE blnbtghog_owners SET password = $1 WHERE uid = $2',
+            [hashedPassword, uid]
+        );
 
         res.json({ message: "Password updated successfully" });
     } catch (err) {
@@ -753,11 +621,11 @@ app.delete("/accounts/:uid", authenticateToken, async (req, res) => {
 
     try {
         // Start a transaction to ensure all deletions are atomic
-        await db.run('BEGIN TRANSACTION');
+        await pool.query('BEGIN TRANSACTION');
 
         try {
             // Delete associated farms
-            await db.run('DELETE FROM farms WHERE ownerUid = ?', [uid]);
+            await pool.query('DELETE FROM farms WHERE ownerUid = $1', [uid]);
             console.log(`Deleted farms for user ${uid}`);
         } catch (err) {
             console.warn("Error deleting farms:", err);
@@ -766,7 +634,7 @@ app.delete("/accounts/:uid", authenticateToken, async (req, res) => {
         
         try {
             // Delete associated notifications
-            await db.run('DELETE FROM notifications WHERE userId = ?', [uid]);
+            await pool.query('DELETE FROM notifications WHERE userId = $1', [uid]);
             console.log(`Deleted notifications for user ${uid}`);
         } catch (err) {
             console.warn("Error deleting notifications:", err);
@@ -774,21 +642,21 @@ app.delete("/accounts/:uid", authenticateToken, async (req, res) => {
         }
         
         // Delete the user account
-        const result = await db.run('DELETE FROM blnbtghog_owners WHERE uid = ?', [uid]);
-        console.log(`Deleted user account ${uid}, rows affected: ${result.changes}`);
+        const result = await pool.query('DELETE FROM blnbtghog_owners WHERE uid = $1', [uid]);
+        console.log(`Deleted user account ${uid}, rows affected: ${result.rowCount}`);
 
-        if (result.changes === 0) {
+        if (result.rowCount === 0) {
             throw new Error("User account not found");
         }
 
         // Commit the transaction
-        await db.run('COMMIT');
+        await pool.query('COMMIT');
         console.log(`Successfully deleted account ${uid}`);
 
         res.json({ message: "Account deleted successfully" });
     } catch (err) {
         // Rollback in case of error
-        await db.run('ROLLBACK');
+        await pool.query('ROLLBACK');
         console.error("Account deletion error:", err);
         res.status(500).json({ 
             error: "Failed to delete account",
@@ -803,31 +671,29 @@ app.get("/hog-owner/:uid", authenticateToken, async (req, res) => {
         console.log(`Fetching details for hog owner: ${req.params.uid}`);
         
         // Get owner details
-        const owner = await db.get(
-            `SELECT uid, fullName, emailAddress, contactNumber, userCreated, role, status, location, latitude, longitude, validIdType, validIdUrl 
-             FROM blnbtghog_owners 
-             WHERE uid = ?`,
+        const { rows: owners } = await pool.query(
+            'SELECT uid, fullName, emailAddress, contactNumber, userCreated, role, status, location, latitude, longitude, validIdType, validIdUrl FROM blnbtghog_owners WHERE uid = $1',
             [req.params.uid]
         );
 
-        if (!owner) {
+        if (owners.length === 0) {
             console.log(`No owner found with uid: ${req.params.uid}`);
             return res.status(404).json({ error: "Hog owner not found" });
         }
 
-        console.log(`Found owner: ${owner.fullName}`);
+        console.log(`Found owner: ${owners[0].fullName}`);
 
         // Ensure validIdUrl is properly formatted
-        if (owner.validIdUrl) {
+        if (owners[0].validIdUrl) {
             // If it's a relative path, make it absolute
-            if (owner.validIdUrl.startsWith('/')) {
-                owner.validIdUrl = `${req.protocol}://${req.get('host')}${owner.validIdUrl}`;
+            if (owners[0].validIdUrl.startsWith('/')) {
+                owners[0].validIdUrl = `${req.protocol}://${req.get('host')}${owners[0].validIdUrl}`;
             }
         }
 
         // Get farm details
-        const farms = await db.all(
-            `SELECT * FROM farms WHERE ownerUid = ?`,
+        const { rows: farms } = await pool.query(
+            'SELECT * FROM farms WHERE ownerUid = $1',
             [req.params.uid]
         );
 
@@ -835,8 +701,8 @@ app.get("/hog-owner/:uid", authenticateToken, async (req, res) => {
 
         // Get hogs for each farm
         for (let farm of farms) {
-            const hogs = await db.all(
-                `SELECT * FROM hogs WHERE farmId = ?`,
+            const { rows: hogs } = await pool.query(
+                'SELECT * FROM hogs WHERE farmId = $1',
                 [farm.id]
             );
             farm.hogs = hogs.map(hog => ({
@@ -848,7 +714,7 @@ app.get("/hog-owner/:uid", authenticateToken, async (req, res) => {
 
         // Combine all data
         const ownerDetails = {
-            ...owner,
+            ...owners[0],
             farms: farms.map(farm => ({
                 ...farm,
                 name: farm.branchName,
@@ -883,8 +749,8 @@ app.post("/api/notifications", authenticateToken, async (req, res) => {
             users = targetUsers;
         } else {
             // Get all active users
-            const allUsers = await db.all(
-                `SELECT uid FROM blnbtghog_owners WHERE isActive = true`
+            const { rows: allUsers } = await pool.query(
+                'SELECT uid FROM blnbtghog_owners WHERE isActive = true'
             );
             users = allUsers.map(user => user.uid);
         }
@@ -895,10 +761,9 @@ app.post("/api/notifications", authenticateToken, async (req, res) => {
         const notifications = [];
         for (const userId of users) {
             const id = uuidv4();
-            await db.run(
-                `INSERT INTO notifications (id, userId, title, message, type, isRead, createdAt)
-                 VALUES (?, ?, ?, ?, ?, false, CURRENT_TIMESTAMP)`,
-                [id, userId, title, message, type || 'info']
+            await pool.query(
+                'INSERT INTO notifications (id, userId, title, message, type, isRead, createdAt) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+                [id, userId, title, message, type || 'info', false, new Date().toISOString()]
             );
             notifications.push({
                 id,
@@ -924,10 +789,10 @@ app.get("/api/notifications", authenticateToken, async (req, res) => {
     try {
         console.log(`Fetching notifications for user ${req.user.uid}`);
         // Only fetch notifications for the current user
-        const notifications = await db.all(
-            `SELECT * FROM notifications 
-             WHERE userId = ? 
-             ORDER BY createdAt DESC`,
+        const { rows: notifications } = await pool.query(
+            'SELECT * FROM notifications 
+             WHERE userId = $1 
+             ORDER BY createdAt DESC',
             [req.user.uid]
         );
         console.log(`Found ${notifications.length} notifications for user ${req.user.uid}`);
@@ -942,14 +807,14 @@ app.get("/api/notifications", authenticateToken, async (req, res) => {
 app.get("/api/notifications/unread/count", authenticateToken, async (req, res) => {
     try {
         console.log(`Getting unread count for user ${req.user.uid}`);
-        const result = await db.get(
-            `SELECT COUNT(*) as count 
+        const { rows: result } = await pool.query(
+            'SELECT COUNT(*) as count 
              FROM notifications 
-             WHERE userId = ? AND isRead = false`,
+             WHERE userId = $1 AND isRead = false',
             [req.user.uid]
         );
-        console.log(`User ${req.user.uid} has ${result.count} unread notifications`);
-        res.json({ count: result.count });
+        console.log(`User ${req.user.uid} has ${result[0].count} unread notifications`);
+        res.json({ count: result[0].count });
     } catch (err) {
         console.error("Error getting unread count:", err);
         res.status(500).json({ error: "Failed to get unread count" });
@@ -962,13 +827,13 @@ app.put("/api/notifications/:id/read", authenticateToken, async (req, res) => {
     try {
         console.log(`Marking notification ${id} as read for user ${req.user.uid}`);
         // Only mark as read for the current user
-        const result = await db.run(
-            `UPDATE notifications 
+        const result = await pool.query(
+            'UPDATE notifications 
              SET isRead = true 
-             WHERE id = ? AND userId = ?`,
+             WHERE id = $1 AND userId = $2',
             [id, req.user.uid]
         );
-        console.log(`Updated ${result.changes} notifications`);
+        console.log(`Updated ${result.rowCount} notifications`);
         res.json({ message: "Notification marked as read" });
     } catch (err) {
         console.error("Error marking notification as read:", err);
@@ -982,13 +847,13 @@ app.delete("/api/notifications/:id", authenticateToken, async (req, res) => {
     try {
         console.log(`Deleting notification ${id} for user ${req.user.uid}`);
         // Only delete for the current user
-        const result = await db.run(
-            `DELETE FROM notifications 
-             WHERE id = ? AND userId = ?`,
+        const result = await pool.query(
+            'DELETE FROM notifications 
+             WHERE id = $1 AND userId = $2',
             [id, req.user.uid]
         );
-        console.log(`Deleted ${result.changes} notifications`);
-        if (result.changes === 0) {
+        console.log(`Deleted ${result.rowCount} notifications`);
+        if (result.rowCount === 0) {
             return res.status(404).json({ error: "Notification not found or not authorized" });
         }
         res.json({ message: "Notification deleted" });
@@ -1002,19 +867,10 @@ app.delete("/api/notifications/:id", authenticateToken, async (req, res) => {
 app.get('/api/verified-hog-owners', authenticateToken, async (req, res) => {
     try {
         console.log('Fetching verified hog owners...');
-        const owners = await db.all(`
-            SELECT 
-                ho.uid,
-                ho.fullName as name,
-                ho.location as address,
-                ho.latitude,
-                ho.longitude,
-                ho.status
-            FROM blnbtghog_owners ho
-            WHERE ho.status = 'verified'
-            AND ho.latitude IS NOT NULL 
-            AND ho.longitude IS NOT NULL
-        `);
+        const { rows: owners } = await pool.query(
+            'SELECT ho.uid, ho.fullName as name, ho.latitude, ho.longitude, ho.status FROM blnbtghog_owners ho WHERE ho.status = $1 AND ho.latitude IS NOT NULL AND ho.longitude IS NOT NULL',
+            ['verified']
+        );
         
         console.log(`Found ${owners.length} verified hog owners`);
         res.json(owners);
@@ -1024,16 +880,16 @@ app.get('/api/verified-hog-owners', authenticateToken, async (req, res) => {
     }
 });
 
+// Start server
 async function startServer() {
     try {
-        await initDB();
-        console.log("✅ SQLite database initialized");
-
-        app.listen(3000, () => {
-            console.log(`🚀 Server running at http://localhost:3000`);
+        const port = process.env.PORT || 3001;
+        app.listen(port, () => {
+            console.log(`Server running on port ${port}`);
         });
     } catch (error) {
-        console.error("❌ Failed to initialize database:", error.message);
+        console.error('Failed to start server:', error);
+        process.exit(1);
     }
 }
 
