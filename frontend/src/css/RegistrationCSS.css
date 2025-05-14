@@ -127,7 +127,7 @@ input:focus, select:focus {
 .location-container {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 15px;
 }
 
 .location-buttons {
@@ -137,20 +137,16 @@ input:focus, select:focus {
 }
 
 .location-btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
     background-color: #ff6b6b;
     color: white;
-    border: none;
-    padding: 12px;
-    border-radius: 8px;
-    cursor: pointer;
     font-weight: 500;
+    cursor: pointer;
     transition: background-color 0.3s;
     flex: 1;
     min-width: 150px;
-}
-
-.location-btn.geocam {
-    background-color: #ff6b6b;
 }
 
 .location-btn:hover {
@@ -158,7 +154,20 @@ input:focus, select:focus {
 }
 
 .location-btn:disabled {
-    background-color: #ffb5b5;
+    background-color: #ffb3b3;
+    cursor: not-allowed;
+}
+
+.location-btn.geocam {
+    background-color: #ff6b6b;
+}
+
+.location-btn.geocam:hover {
+    background-color: #ff5252;
+}
+
+.location-btn.geocam:disabled {
+    background-color: #ffb3b3;
     cursor: not-allowed;
 }
 
@@ -666,5 +675,57 @@ input:focus, select:focus {
     
     .photo-preview {
         width: calc(50% - 5px);
+    }
+}
+
+/* Manual location styles */
+.manual-location-container {
+    margin-top: 15px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.manual-location-label {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.location-select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    background-color: white;
+    cursor: pointer;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.location-select:focus {
+    outline: none;
+    border-color: #ff6b6b;
+    box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.1);
+}
+
+.location-select:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+}
+
+/* Mobile responsive styles for location section */
+@media (max-width: 768px) {
+    .location-buttons {
+        flex-direction: column;
+    }
+
+    .location-btn {
+        width: 100%;
+    }
+
+    .manual-location-container {
+        padding: 10px;
     }
 }

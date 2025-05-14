@@ -6,6 +6,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
+import { getVerifiedHogOwners } from "../services/api";
 import "../css/ASFMap.css";
 
 // Fix for default icon in Leaflet 
@@ -25,20 +26,6 @@ const hogOwnerIcon = L.icon({
     iconAnchor: [7, 25],
     popupAnchor: [1, -20]
 });
-
-// Dummy hog owner data
-const hogOwnersData = [
-    { id: 1, name: "Juan Santos", lat: 13.9353, lng: 120.736, farmName: "Santos Piggery" },
-    { id: 2, name: "Maria Reyes", lat: 13.9310, lng: 120.730, farmName: "Reyes Hog Farm" },
-    { id: 3, name: "Pedro Lim", lat: 13.9380, lng: 120.726, farmName: "Lim's Swine" },
-    { id: 4, name: "Ana Cruz", lat: 13.9290, lng: 120.735, farmName: "Cruz Farms" },
-    { id: 5, name: "Jose Mendoza", lat: 13.9350, lng: 120.743, farmName: "Mendoza Piggery" },
-    { id: 6, name: "Elena Tan", lat: 13.9400, lng: 120.723, farmName: "El-Tan Hogs" },
-    { id: 7, name: "Manuel Garcia", lat: 13.9320, lng: 120.740, farmName: "Garcia Pig Ranch" },
-    { id: 8, name: "Sophia Bautista", lat: 13.9270, lng: 120.731, farmName: "Bautista Livestock" },
-    { id: 9, name: "Ricardo Flores", lat: 13.9370, lng: 120.745, farmName: "Flores Farms" },
-    { id: 10, name: "Teresa Castro", lat: 13.9420, lng: 120.728, farmName: "Castro Piggery" },
-];
 
 // Map Events component to handle click events
 const MapEvents = ({ onClick }) => {
@@ -149,7 +136,6 @@ const ZoneItem = ({ zone, affectedOwners }) => {
                     )}
                 </div>
             </div>
-            {!isMobile && <div className="asf-coords">🏠 Approx. within {zone.radius / 1000}KM</div>}
             {isMobile && <div className="asf-coords">{zone.radius / 1000}KM radius</div>}
             
             {isOpen && affectedOwners.length > 0 && (
@@ -158,7 +144,7 @@ const ZoneItem = ({ zone, affectedOwners }) => {
                         <div key={owner.id} className="asf-owner-item">
                             <strong>{owner.name}</strong>
                             <div>{owner.farmName}</div>
-                            {!isMobile && (
+                            {!isMobile && owner.lat && owner.lng && (
                                 <div className="asf-owner-coords">
                                     📍 {owner.lat.toFixed(4)}, {owner.lng.toFixed(4)}
                                 </div>
@@ -219,13 +205,15 @@ const OptimizedSidebar = ({ position, location, zones, getAffectedOwners }) => {
 };
 
 // Full ASF Map Content
-// Replace the existing ASFMapContent component with this updated version
 const ASFMapContent = () => {
     const [position, setPosition] = useState([13.9333, 120.733]); // Default position
     const [hasSelected, setHasSelected] = useState(false);
     const [location, setLocation] = useState("Fetching location...");
     const mapContainerRef = useRef(null);
     const [isMobile, setIsMobile] = useState(false);
+    const [hogOwners, setHogOwners] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     
     useEffect(() => {
         const checkMobile = () => {
@@ -238,6 +226,30 @@ const ASFMapContent = () => {
         return () => {
             window.removeEventListener('resize', checkMobile);
         };
+    }, []);
+
+    // Fetch verified hog owners
+    useEffect(() => {
+        const fetchHogOwners = async () => {
+            try {
+                setLoading(true);
+                const response = await getVerifiedHogOwners();
+                if (Array.isArray(response)) {
+                    setHogOwners(response);
+                    setError(null);
+                } else {
+                    setError('Invalid response format');
+                    console.error('Invalid response format:', response);
+                }
+            } catch (err) {
+                setError('Failed to fetch hog owner data');
+                console.error('Error fetching hog owners:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchHogOwners();
     }, []);
     
     const zones = [
@@ -260,10 +272,10 @@ const ASFMapContent = () => {
             return R * c;
         };
 
-        return hogOwnersData.filter(owner => {
+        return hogOwners.filter(owner => {
             const distance = calculateDistance(
                 position[0], position[1], 
-                owner.lat, owner.lng
+                owner.latitude, owner.longitude
             );
             return distance <= zoneRadius;
         });
@@ -348,19 +360,33 @@ const ASFMapContent = () => {
                     </Marker>
                     
                     {/* Hog owner markers */}
-                    {hogOwnersData.map(owner => (
+                    {!loading && !error && hogOwners.map(owner => (
                         <Marker 
-                            key={owner.id} 
-                            position={[owner.lat, owner.lng]} 
+                            key={owner.uid} 
+                            position={[owner.latitude, owner.longitude]} 
                             icon={hogOwnerIcon}
                         >
                             <Popup>
                                 <b>{owner.name}</b><br />
-                                <strong>{owner.farmName}</strong><br />
-                                📍 {owner.lat.toFixed(4)}, {owner.lng.toFixed(4)}
+                                📍 {owner.latitude.toFixed(4)}, {owner.longitude.toFixed(4)}<br />
+                                {owner.address}
                             </Popup>
                         </Marker>
                     ))}
+
+                    {/* Loading state */}
+                    {loading && (
+                        <div className="asf-loading">
+                            Loading hog owner data...
+                        </div>
+                    )}
+
+                    {/* Error state */}
+                    {error && (
+                        <div className="asf-error">
+                            {error}
+                        </div>
+                    )}
                 </MapContainer>
             </div>
             

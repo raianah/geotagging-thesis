@@ -266,6 +266,7 @@ const UserDashboard = ({ darkMode, setDarkMode }) => {
             // Add hogs array to the data being sent
             await addFarm({
                 ...newBranchData,
+                pigCount: hogs.length,
                 hogs: hogs
             });
             showNotification("New farm has been added successfully!", "success")

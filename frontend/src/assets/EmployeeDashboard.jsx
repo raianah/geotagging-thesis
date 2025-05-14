@@ -4,7 +4,7 @@ import ASFMap from "./ASFMap";
 import AddNotification from "./AddNotification";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { ChevronLeft, ChevronRight, Search, ArrowUpDown, CheckCircle, XCircle, Eye, User, Mail, MapPin, Calendar, Phone, Home, Clipboard, X } from "lucide-react";
-import { getAccounts, getDashboardData, getPendingAccounts, updateAccountStatus } from "../services/api";
+import { getAccounts, getDashboardData, getPendingAccounts, updateAccountStatus, getHogOwnerDetails } from "../services/api";
 import "../css/Navbar.css";
 import "../css/EmployeeDashboard.css";
 
@@ -36,6 +36,10 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
             return null;
         }
     });
+
+    const [detailsLoading, setDetailsLoading] = useState(false);
+    const [detailsError, setDetailsError] = useState(null);
+    const [fullDetails, setFullDetails] = useState(null);
 
     const statTypes = [
         'Total No. of Registered Hog Raisers',
@@ -181,9 +185,28 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
         setSelectedAccount(null);
     };
 
-    const handleViewDetails = (account) => {
-        setSelectedAccount(account);
+    const handleViewDetails = async (account) => {
         setShowDetailsModal(true);
+        setDetailsLoading(true);
+        setDetailsError(null);
+        setFullDetails(null);
+        try {
+            const details = await getHogOwnerDetails(account.uid);
+            // Ensure validIdUrl is properly formatted
+            if (details.validIdUrl) {
+                if (!details.validIdUrl.startsWith('data:image')) {
+                    if (details.validIdUrl.startsWith('/')) {
+                        details.validIdUrl = `${window.location.origin}${details.validIdUrl}`;
+                    }
+                }
+            }
+            setFullDetails(details);
+            setSelectedAccount(account);
+        } catch (err) {
+            setDetailsError(err.message);
+        } finally {
+            setDetailsLoading(false);
+        }
     };
 
     const navigateGraph = (direction) => {
@@ -218,19 +241,13 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
         const newStatus = action === 'approve' ? 'verified' : 'rejected';
         try {
             await updateAccountStatus(uid, newStatus);
-            // Remove from pending list if approved, otherwise update status in place
-            if (action === 'approve') {
+            // Remove from pending list immediately
                 setPendingAccounts(prev => prev.filter(acc => acc.uid !== uid));
                 setFilteredAccounts(prev => prev.filter(acc => acc.uid !== uid));
-                const updated = await getAccounts();
-                setRegisteredUsers(updated.filter(acc => acc.role && acc.role.toLowerCase() === 'user' && acc.status && acc.status.toLowerCase() === 'verified'));
-            } else {
-                setPendingAccounts(prev => prev.map(acc => acc.uid === uid ? { ...acc, status: 'rejected' } : acc));
-                setFilteredAccounts(prev => prev.map(acc => acc.uid === uid ? { ...acc, status: 'rejected' } : acc));
-            }
-            // If viewing details of this account, close modal
             if (selectedAccount && selectedAccount.uid === uid) closeDetailsModal();
             if (action === 'approve') {
+                const updated = await getAccounts();
+                setRegisteredUsers(updated.filter(acc => acc.role && acc.role.toLowerCase() === 'user' && acc.status && acc.status.toLowerCase() === 'verified'));
                 showNotification("Account was approved", 'success');
             } else {
                 showNotification("Account rejected.", 'error');
@@ -664,9 +681,9 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
                 </div>
             )}
 
-            {showDetailsModal && selectedAccount && (
+            {showDetailsModal && (
                 <div className="modal-overlay" onClick={closeDetailsModal}>
-                    <div className="details-modal-content" onClick={(e) => e.stopPropagation()}>
+                    <div className={`details-modal-content ${darkMode ? 'dark-mode' : ''}`} onClick={e => e.stopPropagation()}>
                         <div className="details-modal-header">
                             <h2>Account Details</h2>
                             <button className="em-close-btn" onClick={closeDetailsModal}>
@@ -674,106 +691,142 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
                             </button>
                         </div>
                         <div className="details-modal-body">
-                            <div className="account-header">
-                                <div className="account-avatar">
-                                    <User size={40} />
-                                </div>
-                                <div className="account-title">
-                                    <h3>{selectedAccount.fullName}</h3>
-                                    <p className="account-subtitle">{selectedAccount.farmType} Hog Raiser • {selectedAccount.experience} Experience</p>
-                                </div>
-                            </div>
-
-                            <div className="details-section">
-                                <h4>Contact Information</h4>
-                                <div className="detail-item">
-                                    <Mail size={16} />
-                                    <span>{selectedAccount.emailAddress}</span>
-                                </div>
-                                <div className="detail-item">
-                                    <Phone size={16} />
-                                    <span>{selectedAccount.contactNumber}</span>
-                                </div>
-                                <div className="detail-item">
-                                    <Home size={16} />
-                                    <span>{selectedAccount.address}</span>
-                                </div>
-                                <div className="detail-item">
-                                    <MapPin size={16} />
-                                    <span>{selectedAccount.location}</span>
-                                </div>
-                                <div className="detail-item">
-                                    <Calendar size={16} />
-                                    <span>Applied on {formatDate(selectedAccount.userCreated)}</span>
-                                </div>
-                            </div>
-
-                            <div className="details-section">
-                                <h4>Farm Information</h4>
-                                <div className="detail-grid">
-                                    <div className="detail-grid-item">
-                                        <span className="detail-label">Farm Size</span>
-                                        <span className="detail-value">{selectedAccount.farmSize}</span>
-                                    </div>
-                                    <div className="detail-grid-item">
-                                        <span className="detail-label">Hog Count</span>
-                                        <span className="detail-value">{selectedAccount.hogCount} hogs</span>
-                                    </div>
-                                    <div className="detail-grid-item">
-                                        <span className="detail-label">Farm Type</span>
-                                        <span className="detail-value">{selectedAccount.farmType}</span>
-                                    </div>
-                                    <div className="detail-grid-item">
-                                        <span className="detail-label">Experience</span>
-                                        <span className="detail-value">{selectedAccount.experience}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="details-section">
-                                <h4>Notes</h4>
-                                <div className="detail-notes">
-                                    <Clipboard size={16} />
-                                    <p>{selectedAccount.notes}</p>
-                                </div>
-                            </div>
-
-                            <div className="details-section">
-                                <h4>Documents Submitted</h4>
-                                <div className="document-list">
-                                    {selectedAccount.documents.map((doc, index) => (
-                                        <div key={index} className="document-item">
-                                            <div className="document-icon">📄</div>
-                                            <span>{doc}</span>
+                            {detailsLoading ? (
+                                <div className="loading">Loading details...</div>
+                            ) : detailsError ? (
+                                <div className="error">{detailsError}</div>
+                            ) : fullDetails ? (
+                                <>
+                                    <div className="account-header">
+                                        <div className="account-avatar">
+                                            <User size={40} />
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
+                                        <div className="account-title">
+                                            <h3>{fullDetails.fullName}</h3>
+                                            <span className={`status-badge ${fullDetails.status?.toLowerCase()}`}>
+                                                {fullDetails.status?.charAt(0).toUpperCase() + fullDetails.status?.slice(1)}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="details-section">
+                                        <h4>Personal Information</h4>
+                                        <div className="detail-item">
+                                            <Mail size={16} />
+                                            <span>{fullDetails.emailAddress}</span>
+                                        </div>
+                                        <div className="detail-item">
+                                            <Phone size={16} />
+                                            <span>{fullDetails.contactNumber || 'Not provided'}</span>
+                                        </div>
+                                        <div className="detail-item">
+                                            <Home size={16} />
+                                            <span>{fullDetails.location || 'Not provided'}</span>
+                                        </div>
+                                        {(fullDetails.latitude && fullDetails.longitude) && (
+                                            <div className="detail-item">
+                                                <MapPin size={16} />
+                                                <span>{fullDetails.latitude}, {fullDetails.longitude}</span>
+                                            </div>
+                                        )}
+                                        {fullDetails.gender && (
+                                            <div className="detail-item">
+                                                <User size={16} />
+                                                <span>{fullDetails.gender}</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="details-section">
+                                        <h4>Valid ID</h4>
+                                        <div className="detail-item">
+                                            <span>Type: {fullDetails.validIdType || 'N/A'}</span>
+                                        </div>
+                                        {fullDetails.validIdUrl && (
+                                            <div className="detail-item">
+                                                <img 
+                                                    src={fullDetails.validIdUrl} 
+                                                    alt="Valid ID" 
+                                                    className="valid-id-image"
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {fullDetails.farms && fullDetails.farms.length > 0 && (
+                                        <div className="details-section">
+                                            <h4>Farm Information</h4>
+                                            {fullDetails.farms.map((farm, idx) => (
+                                                <div key={farm.id || idx} className="farm-item">
+                                                    <div className="farm-header">
+                                                        <strong>Farm #{idx+1}:</strong> {farm.name}
+                                                    </div>
+                                                    <div className="farm-details">
+                                                        <div>Location: {farm.location}</div>
+                                                        <div>Type: {farm.farmType}</div>
+                                                        <div>Size: {farm.farmSize}</div>
+                                                        <div>Pig Count: {farm.pigCount}</div>
+                                                    </div>
+                                                    
+                                                    {farm.hogs && farm.hogs.length > 0 && (
+                                                        <div className="hogs-section">
+                                                            <strong>Hogs:</strong>
+                                                            <ul className="hogs-list">
+                                                                {farm.hogs.map((hog, hidx) => (
+                                                                    <li key={hog.id || hidx} className="hog-item">
+                                                                        <div className="hog-info">
+                                                                            <div className="hog-breed">{hog.breed}</div>
+                                                                            <div className="hog-details">
+                                                                                <span>Gender: {hog.gender || 'Not specified'}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                        {hog.photos && hog.photos.length > 0 && (
+                                                                            <div className="hog-photos">
+                                                                                {hog.photos.map((photo, pidx) => (
+                                                                                    <img 
+                                                                                        key={pidx} 
+                                                                                        src={photo.startsWith('/') ? `${window.location.origin}${photo}` : photo} 
+                                                                                        alt="Hog" 
+                                                                                        className="hog-photo"
+                                                                                    />
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+                                                                    </li>
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </>
+                            ) : <div>No details found.</div>}
                         </div>
                         <div className="details-modal-footer">
-                            <button className="btn secondary-btn" onClick={closeDetailsModal}>
+                            <button 
+                                className="btn secondary-btn" 
+                                onClick={closeDetailsModal}
+                            >
                                 Cancel
                             </button>
-                            <div className="action-btns">
-                                <button 
-                                    className="btn reject-btn" 
-                                    onClick={() => {
-                                        handleAccountAction(selectedAccount.uid, 'reject');
-                                    }}
-                                >
-                                    <XCircle size={16} />
-                                    Reject
-                                </button>
-                                <button 
-                                    className="btn approve-btn" 
-                                    onClick={() => {
-                                        handleAccountAction(selectedAccount.uid, 'approve');
-                                    }}
-                                >
-                                    <CheckCircle size={16} />
-                                    Approve
-                                </button>
-                            </div>
+                            {fullDetails && (
+                                <div className="action-btns">
+                                    <button 
+                                        className="btn reject-btn" 
+                                        onClick={() => handleAccountAction(fullDetails.uid, 'reject')}
+                                    >
+                                        <XCircle size={16} /> Reject
+                                    </button>
+                                    <button 
+                                        className="btn approve-btn" 
+                                        onClick={() => handleAccountAction(fullDetails.uid, 'approve')}
+                                    >
+                                        <CheckCircle size={16} /> Approve
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

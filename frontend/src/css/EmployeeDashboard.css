@@ -772,8 +772,8 @@
     width: 650px;
     max-width: 90%;
     max-height: 85%;
-    background-color: var(--stat-card-bg, #e0e0e0);
-    color: var(--text-color);
+    background-color: var(--stat-card-bg, #fff);
+    color: var(--text-color, #333);
     border-radius: 12px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
     position: relative;
@@ -783,255 +783,310 @@
     flex-direction: column;
 }
 
+.details-modal-content.dark-mode {
+    background-color: var(--dark-bg, #1a1a1a);
+    color: var(--dark-text, #fff);
+}
+
 .details-modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 1.25rem 1.5rem;
-    border-bottom: 1px solid #444;
+    border-bottom: 1px solid var(--border-color, #eee);
 }
 
 .details-modal-header h2 {
-    color: var(--text-color);
+    color: var(--text-color, #333);
     margin: 0;
     font-size: 1.5rem;
+}
+
+.dark-mode .details-modal-header {
+    border-bottom-color: var(--dark-border, #333);
 }
 
 .details-modal-body {
     flex: 1;
     padding: 1.5rem;
     overflow-y: auto;
-    color: var(--text-color);
+    color: var(--text-color, #333);
 }
 
 .details-modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color, #eee);
     display: flex;
     justify-content: space-between;
-    padding: 1rem 1.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    align-items: center;
+}
+
+.dark-mode .details-modal-footer {
+    border-top-color: var(--dark-border, #333);
 }
 
 /* Account Header */
 .account-header {
+    padding: 20px;
+    background: var(--section-bg, #f8f9fa);
+    border-radius: 8px;
+    margin-bottom: 24px;
     display: flex;
     align-items: center;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    gap: 16px;
+}
+
+.dark-mode .account-header {
+    background: var(--dark-section-bg, rgba(255, 255, 255, 0.05));
 }
 
 .account-avatar {
-    background-color: rgba(255, 255, 255, 0.1);
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
-    width: 64px;
-    height: 64px;
+    background: var(--avatar-bg, #e0e0e0);
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: 1rem;
+    color: var(--avatar-color, #666);
+}
+
+.dark-mode .account-avatar {
+    background: var(--dark-avatar-bg, rgba(255, 255, 255, 0.1));
+    color: var(--dark-avatar-color, #fff);
 }
 
 .account-title h3 {
-    margin: 0 0 0.25rem 0;
-    font-size: 1.25rem;
+    margin: 0 0 8px 0;
+    font-size: 1.5rem;
+    color: var(--text-color, #333);
 }
 
-.account-subtitle {
-    margin: 0;
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 0.9rem;
+.dark-mode .account-title h3 {
+    color: var(--dark-text, #fff);
 }
 
 /* Details Sections */
 .details-section {
-    margin-bottom: 1.5rem;
+    margin-bottom: 24px;
+    padding: 20px;
+    background: var(--section-bg, #fff);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .details-section {
+    background: var(--dark-section-bg, rgba(255, 255, 255, 0.05));
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .details-section h4 {
-    margin: 0 0 0.75rem 0;
-    color: #ff6b6b;
-    font-size: 1rem;
+    color: var(--accent-color, #ff6b6b);
+    margin: 0 0 16px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
 }
 
 .detail-item {
     display: flex;
     align-items: center;
-    margin-bottom: 0.75rem;
+    gap: 8px;
+    margin-bottom: 12px;
+    color: var(--text-color, #333);
+}
+
+.dark-mode .detail-item {
+    color: var(--dark-text, #fff);
 }
 
 .detail-item svg {
-    margin-right: 0.75rem;
-    color: rgba(255, 255, 255, 0.6);
-    flex-shrink: 0;
+    color: var(--icon-color, #666);
 }
 
-.detail-item span {
-    color: rgba(255, 255, 255, 0.9);
+.dark-mode .detail-item svg {
+    color: var(--dark-icon-color, rgba(255, 255, 255, 0.7));
 }
 
-/* Grid Layout for Farm Information */
-.detail-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-}
-
-.detail-grid-item {
-    background-color: rgba(255, 255, 255, 0.05);
+/* Valid ID Image */
+.valid-id-image {
+    max-width: 300px;
     border-radius: 8px;
-    padding: 0.75rem;
+    margin-top: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.detail-label {
-    display: block;
-    font-size: 0.8rem;
-    color: rgba(255, 255, 255, 0.6);
-    margin-bottom: 0.25rem;
-}
-
-.detail-value {
-    font-size: 1rem;
-    color: var(--text-color);
-    font-weight: 500;
-}
-
-/* Notes Section */
-.detail-notes {
-    display: flex;
-    background-color: rgba(255, 255, 255, 0.05);
+/* Farm Information */
+.farm-item {
+    margin-bottom: 20px;
+    padding: 16px;
+    background: var(--section-bg, #f8f9fa);
     border-radius: 8px;
-    padding: 1rem;
+    border: 1px solid var(--border-color, #eee);
 }
 
-.detail-notes svg {
-    margin-right: 0.75rem;
-    color: rgba(255, 255, 255, 0.6);
-    flex-shrink: 0;
-    margin-top: 0.25rem;
+.dark-mode .farm-item {
+    background: var(--dark-section-bg, rgba(255, 255, 255, 0.05));
+    border-color: var(--dark-border, #333);
 }
 
-.detail-notes p {
-    margin: 0;
-    color: rgba(255, 255, 255, 0.9);
-    line-height: 1.5;
+.farm-header {
+    margin-bottom: 12px;
+    font-size: 1.1rem;
+    color: var(--text-color, #333);
 }
 
-/* Document List */
-.document-list {
+.dark-mode .farm-header {
+    color: var(--dark-text, #fff);
+}
+
+.farm-details {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
+    flex-direction: column;
+    gap: 8px;
+    color: var(--text-color, #333);
 }
 
-.document-item {
-    display: flex;
-    align-items: center;
-    background-color: rgba(255, 255, 255, 0.05);
+.dark-mode .farm-details {
+    color: var(--dark-text, #fff);
+}
+
+/* Hogs Section */
+.hogs-section {
+    margin-top: 16px;
+}
+
+.hogs-list {
+    margin: 8px 0 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.hog-item {
+    margin-bottom: 8px;
+    padding: 12px;
+    background: var(--section-bg, #fff);
     border-radius: 6px;
-    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border-color, #eee);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dark-mode .hog-item {
+    background: var(--dark-section-bg, rgba(255, 255, 255, 0.05));
+    border-color: var(--dark-border, #333);
+}
+
+.hog-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.hog-breed {
+    font-weight: 600;
+    color: var(--text-color, #333);
+}
+
+.dark-mode .hog-breed {
+    color: var(--dark-text, #fff);
+}
+
+.hog-details {
+    font-size: 0.9rem;
+    color: var(--text-light, #666);
+}
+
+.dark-mode .hog-details {
+    color: var(--dark-text-light, rgba(255, 255, 255, 0.7));
+}
+
+.hog-photos {
+    display: flex;
+    gap: 4px;
+}
+
+.hog-photo {
+    max-width: 60px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color, #eee);
+}
+
+.dark-mode .hog-photo {
+    border-color: var(--dark-border, #333);
 }
 
 /* Action Buttons */
 .action-btns {
     display: flex;
-    gap: 0.75rem;
+    gap: 12px;
 }
 
 .btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
+    gap: 6px;
     font-weight: 500;
-    cursor: pointer;
     transition: all 0.2s ease;
-    border: none;
-}
-
-.btn svg {
-    margin-right: 0.5rem;
 }
 
 .secondary-btn {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: var(--text-color);
+    border: 1px solid var(--border-color, #ddd);
+    background: var(--section-bg, #fff);
+    color: var(--text-color, #333);
 }
 
-.secondary-btn:hover {
-    background-color: rgba(255, 255, 255, 0.15);
-}
-
-.approve-btn {
-    background-color: #4caf50;
-    color: var(--text-color);
-}
-
-.approve-btn:hover {
-    background-color: #43a047;
+.dark-mode .secondary-btn {
+    border-color: var(--dark-border, #333);
+    background: var(--dark-section-bg, rgba(255, 255, 255, 0.05));
+    color: var(--dark-text, #fff);
 }
 
 .reject-btn {
-    background-color: #f44336;
-    color: var(--text-color);
+    border: none;
+    background: #dc3545;
+    color: #fff;
 }
 
-.reject-btn:hover {
-    background-color: #e53935;
+.approve-btn {
+    border: none;
+    background: #28a745;
+    color: #fff;
 }
 
-/* Animation */
-@keyframes modalFadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Scrollbar styling */
-.details-modal-body::-webkit-scrollbar {
-    width: 6px;
+.dark-mode .btn:hover {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.details-modal-body::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
+/* Status Badge */
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 500;
 }
 
-.details-modal-body::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 3px;
+.status-badge.pending {
+    background: #ffd700;
+    color: #000;
 }
 
-.details-modal-body::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
+.status-badge.verified {
+    background: #28a745;
+    color: #fff;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .details-modal-content {
-        width: 95%;
-    }
-
-    .detail-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .details-modal-footer {
-        flex-direction: column-reverse;
-        gap: 0.75rem;
-    }
-
-    .action-btns {
-        width: 100%;
-    }
-
-    .btn {
-        flex: 1;
-    }
+.status-badge.rejected {
+    background: #dc3545;
+    color: #fff;
 }
 
 .slide-notification-container {
