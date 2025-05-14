@@ -141,9 +141,9 @@ async function seed() {
     // Insert all accounts
     for (const emp of employees) {
         await db.run(
-            `INSERT INTO blnbtghog_owners (uid, fullName, emailAddress, password, contactNumber, userCreated, profilePicture, role, location, latitude, longitude)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [emp.uid, emp.fullName, emp.emailAddress, emp.password, emp.contactNumber, emp.userCreated, emp.profilePicture, emp.role, emp.location, emp.latitude, emp.longitude]
+            `INSERT INTO blnbtghog_owners (uid, fullName, emailAddress, password, contactNumber, userCreated, profilePicture, role, status, location, latitude, longitude)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [emp.uid, emp.fullName, emp.emailAddress, emp.password, emp.contactNumber, emp.userCreated, emp.profilePicture, emp.role, 'verified', emp.location, emp.latitude, emp.longitude]
         );
     }
     for (const owner of hogOwners) {

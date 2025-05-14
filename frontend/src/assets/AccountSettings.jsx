@@ -5,10 +5,12 @@ import { IoMdClose } from "react-icons/io";
 import { MdVerified, MdErrorOutline } from "react-icons/md";
 import { BiZoomIn, BiZoomOut } from "react-icons/bi";
 import { FaCamera } from "react-icons/fa";
-import { getProfile, updateProfile, updatePassword } from "../services/api";
+import { getProfile, updateProfile, updatePassword, deleteAccount } from "../services/api";
+import { useNavigate } from "react-router-dom";
 import "../css/AccountSettings.css";
 
 const AccountSettings = ({ isOpen, onClose, user }) => {
+    const navigate = useNavigate();
     // State for profile data
     const [profileData, setProfileData] = useState({
         firstName: '',
@@ -151,10 +153,14 @@ const AccountSettings = ({ isOpen, onClose, user }) => {
         
         if (!passwordData.newPassword) {
             errors.newPassword = 'New password is required';
-        } else if (passwordData.newPassword.length < 8) {
-            errors.newPassword = 'Password must be at least 8 characters';
-        } else if (passwordData.newPassword === passwordData.currentPassword) {
-            errors.newPassword = 'New password must be different from current password';
+        } else {
+            if (passwordData.newPassword.length < 8) {
+                errors.newPassword = 'Password must be at least 8 characters';
+            } else if (!/[0-9]/.test(passwordData.newPassword)) {
+                errors.newPassword = 'Password must contain at least one number';
+            } else if (passwordData.newPassword === passwordData.currentPassword) {
+                errors.newPassword = 'New password must be different from current password';
+            }
         }
         
         if (!passwordData.confirmPassword) {
@@ -622,10 +628,24 @@ const AccountSettings = ({ isOpen, onClose, user }) => {
         }
     };
 
-    const handleDeleteAccount = () => {
+    const handleDeleteAccount = async () => {
         if(window.confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
-            // Call delete account API here
-            showNotification("Account deletion requested. You will receive a confirmation email.", "info");
+            setLoading(true);
+            try {
+                await deleteAccount();
+                // Clear local storage
+                localStorage.removeItem('userId');
+                localStorage.removeItem('authToken');
+                // Show success notification
+                showNotification("Account deleted successfully", "success");
+                // Close the modal
+                onClose();
+                // Redirect to login page
+                navigate('/login');
+            } catch (err) {
+                setLoading(false);
+                showNotification("Failed to delete account: " + err.message, "error");
+            }
         }
     };
 

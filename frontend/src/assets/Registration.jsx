@@ -9,6 +9,7 @@ export default function RegistrationForm() {
 		firstName: "",
 		lastName: "",
 		email: "",
+		password: "",
 		phone: "",
 		location: "",
 		locationImage: null,
@@ -16,7 +17,8 @@ export default function RegistrationForm() {
 		validId: null,
 		hogList: [],
 		hogPhotos: [],
-		acceptedPrivacyPolicy: false
+		acceptedPrivacyPolicy: false,
+		role: "user"
 	});
 	
 	const [errors, setErrors] = useState({});
@@ -32,6 +34,26 @@ export default function RegistrationForm() {
 	const mediaStreamRef = useRef(null);
 	
 	const navigate = useNavigate();
+
+	// Add this constant for Balayan barangays
+	const BALAYAN_BARANGAYS = [
+		"Brgy. Caloocan, Balayan, Batangas",
+		"Brgy. Canda, Balayan, Batangas",
+		"Brgy. Lucban, Balayan, Batangas",
+		"Brgy. Gumamela, Balayan, Batangas",
+		"Brgy. Poblacion, Balayan, Batangas",
+		"Brgy. San Juan, Balayan, Batangas",
+		"Brgy. San Piro, Balayan, Batangas",
+		"Brgy. San Roque, Balayan, Batangas",
+		"Brgy. San Sebastian, Balayan, Batangas",
+		"Brgy. San Vicente, Balayan, Batangas"
+	];
+
+	// Add new state for tracking location methods
+	const [locationMethodsAttempted, setLocationMethodsAttempted] = useState({
+		gps: false,
+		geocam: false
+	});
 
 	const handleCheckboxChange = (e) => {
 		const { name, checked } = e.target;
@@ -88,6 +110,16 @@ export default function RegistrationForm() {
 
 	const checkCoordinatesInBalayan = async (latitude, longitude) => {
 		try {
+			// First, validate against the expanded boundaries
+			const isInBoundary = (
+				latitude >= 13.8800 && latitude <= 13.9700 && // Expanded latitude range
+				longitude >= 120.6800 && longitude <= 120.7800 // Expanded longitude range
+			);
+
+			if (!isInBoundary) {
+				return false;
+			}
+
 			// Use a more specific geocoding query with parameters to get detailed result
 			const response = await fetch(
 				`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`
@@ -100,86 +132,130 @@ export default function RegistrationForm() {
 				const municipality = (data.address.municipality || "").toLowerCase();
 				const county = (data.address.county || "").toLowerCase();
 				const state = (data.address.state || "").toLowerCase();
+				const village = (data.address.village || "").toLowerCase();
+				const suburb = (data.address.suburb || "").toLowerCase();
 				
 				// Check if any of these fields contain "balayan"
 				const isBalayan = 
 				city.includes("balayan") || 
 				municipality.includes("balayan") || 
-				county.includes("balayan");
+					county.includes("balayan") ||
+					village.includes("balayan") ||
+					suburb.includes("balayan");
 				
 				// Check if state/province is Batangas
 				const isBatangas = state.includes("batangas");
 				
-				return isBalayan && isBatangas;
+				if (isBalayan && isBatangas) {
+					return true;
 			}
 			
-			// If we can't determine from address details, use the display name
-			return isLocationInBalayan(data.display_name || "");
+				// If we can't determine from address details, check the display name
+				if (data.display_name) {
+					return isLocationInBalayan(data.display_name);
+				}
+			}
+			
+			// If we still can't determine, check if the coordinates are within a reasonable distance
+			// of known Balayan landmarks (e.g., Balayan Municipal Hall)
+			const balayanCenter = {
+				lat: 13.9335,
+				lng: 120.7320
+			};
+			
+			// Calculate distance using Haversine formula
+			const distance = calculateDistance(
+				latitude,
+				longitude,
+				balayanCenter.lat,
+				balayanCenter.lng
+			);
+			
+			// If within 5km of Balayan center, consider it valid
+			return distance <= 5;
 			} catch (error) {
 			console.error("Error checking coordinates:", error);
 			return false;
 		}
 	};
 
+	// Add Haversine formula for distance calculation
+	const calculateDistance = (lat1, lon1, lat2, lon2) => {
+		const R = 6371; // Earth's radius in kilometers
+		const dLat = toRad(lat2 - lat1);
+		const dLon = toRad(lon2 - lon1);
+		const a = 
+			Math.sin(dLat/2) * Math.sin(dLat/2) +
+			Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * 
+			Math.sin(dLon/2) * Math.sin(dLon/2);
+		const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+		return R * c;
+	};
+
+	const toRad = (value) => {
+		return value * Math.PI / 180;
+	};
+
 	const handleGetLocation = () => {
 		setLocationLoading(true);
 		setLocationError("");
+		setLocationMethodsAttempted(prev => ({ ...prev, gps: true }));
 		
 		if (navigator.geolocation) {
 			navigator.geolocation.getCurrentPosition(
 				async (position) => {
-				const { latitude, longitude } = position.coords;
-				
-				try {
-					// First check if the coordinates are in Balayan
-					const isInBalayan = await checkCoordinatesInBalayan(latitude, longitude);
+					const { latitude, longitude } = position.coords;
 					
-					// Use reverse geocoding to get address
-					const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
-					const data = await response.json();
-					const location = data.display_name || `Lat: ${latitude}, Long: ${longitude}`;
-					
-					if (isInBalayan) {
-					setFormData({ ...formData, location });
-					setLocationLoading(false);
-					// Clear any previous errors
-					setErrors({...errors, location: ""});
-					} else {
-					setLocationError("Registration is only available for locations in Balayan, Batangas.");
-					setLocationLoading(false);
+					try {
+						// First check if the coordinates are in Balayan
+						const isInBalayan = await checkCoordinatesInBalayan(latitude, longitude);
+						
+						// Use reverse geocoding to get address
+						const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+						const data = await response.json();
+						const location = data.display_name || `Lat: ${latitude}, Long: ${longitude}`;
+						
+						if (isInBalayan) {
+							setFormData(prev => ({ 
+								...prev, 
+								location,
+								latitude,
+								longitude
+							}));
+							setLocationLoading(false);
+							// Clear any previous errors
+							setErrors(prev => ({ ...prev, location: "" }));
+						} else {
+							setLocationError("Registration is only available for locations in Balayan, Batangas. Please ensure you are within the municipality.");
+							setLocationLoading(false);
+						}
+					} catch (error) {
+						setLocationError("Failed to verify location. Please try again or use GeoCam.");
+						setLocationLoading(false);
 					}
-				} catch (error) {
-					setLocationError("Failed to get address. Using coordinates.");
-					const location = `Lat: ${latitude}, Long: ${longitude}`;
-					
-					// Even with coordinates, we should try to validate the area
-					setFormData({ ...formData, location });
-					setLocationLoading(false);
-					setErrors({...errors, location: "We couldn't verify if this location is in Balayan, Batangas."});
-				}
 				},
 				(error) => {
-				let errorMessage = "Failed to get location. Please try again.";
-				
-				// Provide more specific error messages based on the error code
-				switch(error.code) {
-					case error.PERMISSION_DENIED:
-					errorMessage = "Location access denied. Please enable location services.";
-					break;
-					case error.POSITION_UNAVAILABLE:
-					errorMessage = "Location information is unavailable. Please try again later.";
-					break;
-					case error.TIMEOUT:
-					errorMessage = "Location request timed out. Please try again.";
-					break;
-				}
-				
-				setLocationError(errorMessage);
-				setLocationLoading(false);
+					let errorMessage = "Failed to get location. Please try again.";
+					
+					// Provide more specific error messages based on the error code
+					switch(error.code) {
+						case error.PERMISSION_DENIED:
+							errorMessage = "Location access denied. Please enable location services to register.";
+							break;
+						case error.POSITION_UNAVAILABLE:
+							errorMessage = "Location information is unavailable. Please try again later.";
+							break;
+						case error.TIMEOUT:
+							errorMessage = "Location request timed out. Please try again.";
+							break;
+					}
+					
+					setLocationError(errorMessage);
+					setLocationLoading(false);
 				}
 			);
-			} else {
-			setLocationError("Geolocation is not supported by this browser.");
+		} else {
+			setLocationError("Geolocation is not supported by this browser. Please use a modern browser with location services.");
 			setLocationLoading(false);
 		}
 	};
@@ -187,8 +263,8 @@ export default function RegistrationForm() {
 	// Start the camera for geocam-like functionality
 	const startCamera = async () => {
 		try {
+			setLocationMethodsAttempted(prev => ({ ...prev, geocam: true }));
 			console.log("Starting camera...");
-			// First, make sure we're showing the camera container
 			setShowCamera(true);
 			setCameraReady(false);
 			setLocationError("");
@@ -262,7 +338,7 @@ export default function RegistrationForm() {
 	// Capture photo and location
 	const captureLocation = () => {
 		if (!navigator.geolocation) {
-			setLocationError("Geolocation is not supported by this browser.");
+			setLocationError("Geolocation is not supported by this browser. Please use a modern browser with location services.");
 			stopCamera();
 			return;
 		}
@@ -277,7 +353,7 @@ export default function RegistrationForm() {
 		
 		// Get current position
 		navigator.geolocation.getCurrentPosition(
-		  	async (position) => {
+			async (position) => {
 				const { latitude, longitude } = position.coords;
 				
 				// Capture image from video stream
@@ -285,62 +361,58 @@ export default function RegistrationForm() {
 				const video = videoRef.current;
 				
 				if (canvas && video) {
-				try {
-					// Draw the video frame to the canvas
-					const context = canvas.getContext('2d');
-					canvas.width = video.videoWidth || 640;
-					canvas.height = video.videoHeight || 480;
-					context.drawImage(video, 0, 0, canvas.width, canvas.height);
-					
-					// Convert canvas to image data URL
-					const imageDataUrl = canvas.toDataURL('image/jpeg');
-					
 					try {
-					// Check if location is in Balayan
-					const isInBalayan = await checkCoordinatesInBalayan(latitude, longitude);
-					
-					// Get address for display
-					const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
-					const data = await response.json();
-					const location = data.display_name || `Lat: ${latitude}, Long: ${longitude}`;
-					
-					if (isInBalayan) {
-						setFormData(prev => ({ 
-						...prev, 
-						location, 
-						locationImage: imageDataUrl 
-						}));
-						setLocationLoading(false);
-						stopCamera();
-						// Clear any previous errors
-						setErrors({...errors, location: ""});
-					} else {
-						setLocationError("Registration is only available for locations in Balayan, Batangas.");
+						// Draw the video frame to the canvas
+						const context = canvas.getContext('2d');
+						canvas.width = video.videoWidth || 640;
+						canvas.height = video.videoHeight || 480;
+						context.drawImage(video, 0, 0, canvas.width, canvas.height);
+						
+						// Convert canvas to image data URL
+						const imageDataUrl = canvas.toDataURL('image/jpeg');
+						
+						try {
+							// Check if location is in Balayan
+							const isInBalayan = await checkCoordinatesInBalayan(latitude, longitude);
+							
+							// Get address for display
+							const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+							const data = await response.json();
+							const location = data.display_name || `Lat: ${latitude}, Long: ${longitude}`;
+							
+							if (isInBalayan) {
+								setFormData(prev => ({ 
+									...prev, 
+									location,
+									locationImage: imageDataUrl,
+									latitude,
+									longitude
+								}));
+								setLocationLoading(false);
+								stopCamera();
+								// Clear any previous errors
+								setErrors({...errors, location: ""});
+							} else {
+								setLocationError("Registration is only available for locations in Balayan, Batangas. Please ensure you are within the municipality.");
+								setLocationLoading(false);
+								stopCamera();
+							}
+						} catch (error) {
+							setLocationError("Failed to verify location. Please try again.");
+							setLocationLoading(false);
+							stopCamera();
+						}
+					} catch (drawError) {
+						console.error("Error drawing to canvas:", drawError);
+						setLocationError("Failed to capture image. Please try again.");
 						setLocationLoading(false);
 						stopCamera();
 					}
-					} catch (error) {
-					setLocationError("Failed to get address. Using coordinates.");
-					const location = `Lat: ${latitude}, Long: ${longitude}`;
-					
-					setFormData(prev => ({ 
-						...prev, 
-						location,
-						locationImage: imageDataUrl
-					}));
+				} else {
+					console.error("Canvas or video element not available");
+					setLocationError("Failed to capture: Camera not available. Please try again.");
 					setLocationLoading(false);
 					stopCamera();
-					setErrors({...errors, location: "We couldn't verify if this location is in Balayan, Batangas."});
-					}
-				} catch (drawError) {
-					console.error("Error drawing to canvas:", drawError);
-					setLocationError("Failed to capture image: " + drawError.message);
-					setLocationLoading(false);
-				}
-				} else {
-				console.error("Canvas or video element not available");
-				setLocationError("Failed to capture: Canvas or video element not available");
-				setLocationLoading(false);
 				}
 			},
 			(error) => {
@@ -348,15 +420,15 @@ export default function RegistrationForm() {
 				
 				// Provide more specific error messages based on the error code
 				switch(error.code) {
-				case error.PERMISSION_DENIED:
-					errorMessage = "Location access denied. Please enable location services.";
-					break;
-				case error.POSITION_UNAVAILABLE:
-					errorMessage = "Location information is unavailable. Please try again later.";
-					break;
-				case error.TIMEOUT:
-					errorMessage = "Location request timed out. Please try again.";
-					break;
+					case error.PERMISSION_DENIED:
+						errorMessage = "Location access denied. Please enable location services to register.";
+						break;
+					case error.POSITION_UNAVAILABLE:
+						errorMessage = "Location information is unavailable. Please try again later.";
+						break;
+					case error.TIMEOUT:
+						errorMessage = "Location request timed out. Please try again.";
+						break;
 				}
 				
 				setLocationError(errorMessage);
@@ -385,8 +457,17 @@ export default function RegistrationForm() {
 				setErrors({...errors, validId: "File size should be less than 5MB"});
 				return;
 			}
+
+			// Convert file to base64
+			const reader = new FileReader();
+			reader.onload = (event) => {
+				setFormData({ ...formData, validId: file, validIdBase64: event.target.result });
+			};
+			reader.onerror = () => {
+				setErrors({...errors, validId: "Failed to read image file"});
+			};
+			reader.readAsDataURL(file);
 			
-			setFormData({ ...formData, validId: file });
 			setErrors({...errors, validId: ""});
 		}
 	};
@@ -564,6 +645,12 @@ export default function RegistrationForm() {
 		if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
 		if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
 		
+		if (!formData.password) {
+			newErrors.password = "Password is required";
+		} else if (formData.password.length < 8) {
+			newErrors.password = "Password must be at least 8 characters long";
+		}
+		
 		if (!formData.phone || formData.phone.length !== 13) {
 			newErrors.phone = "Phone number must be started with +639 followed by 9 digits";
 		}
@@ -580,37 +667,12 @@ export default function RegistrationForm() {
 			newErrors.location = "Only locations in Balayan, Batangas are eligible for registration";
 		}
 		
-		if (!formData.validIdType) {
-			newErrors.validIdType = "Please select an ID type";
-		}
-		
-		if (!formData.validId) {
-			newErrors.validId = "Valid ID is required";
-		}
-		
-		if (formData.hogList.length === 0) {
-			newErrors.hogList = "Please add at least one hog";
-		} else {
-			const hogErrors = [];
-			formData.hogList.forEach((hog, index) => {
-				const hogError = {};
-				if (!hog.breed) hogError.breed = "Breed is required";
-				if (!hog.gender) hogError.gender = "Gender is required";
-				if (!hog.birthdate) hogError.birthdate = "Birthdate is required";
-				if (hog.photos.length === 0) hogError.photos = "At least one photo is required";
-				
-				if (Object.keys(hogError).length > 0) {
-					hogErrors[index] = hogError;
-				}
-			});
-			
-			if (hogErrors.length > 0) {
-				newErrors.hogErrors = hogErrors;
-			}
-		}
-	
 		if (!formData.acceptedPrivacyPolicy) {
 			newErrors.acceptedPrivacyPolicy = "You must agree to the Privacy Policy";
+		}
+		
+		if (!formData.validIdType) {
+			newErrors.validIdType = "Please select an ID type";
 		}
 		
 		setErrors(newErrors);
@@ -628,12 +690,15 @@ export default function RegistrationForm() {
 				firstName: formData.firstName,
 				lastName: formData.lastName,
 				email: formData.email,
+				password: formData.password,
 				phone: formData.phone,
+				role: formData.role,
 				location: formData.location,
-				totalHogs: formData.totalHogs
+				validIdType: formData.validIdType,
+				validIdUrl: formData.validIdBase64 || null,
+				latitude: formData.latitude,
+				longitude: formData.longitude
 			});
-			const profile = await getProfile();
-			localStorage.setItem("profile", JSON.stringify(profile));
 			setLoading(false);
 			setSuccess("Registration successful! Redirecting to login...");
 			setTimeout(() => navigate("/login"), 2000);
@@ -748,6 +813,20 @@ export default function RegistrationForm() {
 										/>
 										{errors.lastName && <span className="error-message">{errors.lastName}</span>}
 									</div>
+								</div>
+							</div>
+
+							<div className="input-group-reg">
+								<label>Password<span className="required">*</span></label>
+								<div className="input-wrapper">
+									<input 
+										type="password" 
+										name="password" 
+										placeholder="Enter password (min. 8 characters)" 
+										value={formData.password} 
+										onChange={handleChange} 
+									/>
+									{errors.password && <span className="error-message">{errors.password}</span>}
 								</div>
 							</div>
 

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import axios from 'axios';
+import { notificationService } from '../services/notificationService';
 
 import { RiMenu3Line, RiCloseLine } from "react-icons/ri";
 import { BiNotification } from "react-icons/bi";
@@ -41,14 +43,104 @@ const Navbar = ({ darkMode, setDarkMode, currentUser, isHomePage = false }) => {
         phoneVerified: true
     });
 
-    // Dummy notifications data
-    const [notifications, setNotifications] = useState([
-        { id: 1, title: "New Hog Owner", message: "John Smith has registered as a new hog owner.", date: "2025-04-12", read: false },
-        { id: 2, title: "Payment Received", message: "Payment of $250.00 received from Emma Johnson for hog care services.", date: "2025-04-11", read: true },
-        { id: 3, title: "System Update", message: "The dashboard will be under maintenance on April 15th from 2:00 AM to 4:00 AM.", date: "2025-04-10", read: false },
-        { id: 4, title: "New Message", message: "You have a new message from Dr. Martinez regarding vaccination schedules.", date: "2025-04-09", read: true },
-        { id: 5, title: "Appointment Request", message: "Lisa Wilson has requested an appointment for hog health check on April 18th.", date: "2025-04-08", read: false }
-    ]);
+    // Replace hard-coded notifications with empty array and loading state
+    const [notifications, setNotifications] = useState([]);
+    const [notificationsLoading, setNotificationsLoading] = useState(true);
+    const [notificationsError, setNotificationsError] = useState(null);
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    // Polling interval for notifications (30 seconds)
+    const POLLING_INTERVAL = 30000;
+
+    // Fetch notifications
+    const fetchNotifications = async () => {
+        try {
+            setNotificationsLoading(true);
+            setNotificationsError(null);
+            const data = await notificationService.getNotifications();
+            setNotifications(data);
+            
+            // Update unread count
+            const unread = data.filter(n => !n.read).length;
+            setUnreadCount(unread);
+        } catch (error) {
+            console.error('Error fetching notifications:', error);
+            setNotificationsError('Failed to load notifications');
+        } finally {
+            setNotificationsLoading(false);
+        }
+    };
+
+    // Initial fetch and setup polling
+    useEffect(() => {
+        fetchNotifications();
+
+        // Set up polling interval
+        const intervalId = setInterval(fetchNotifications, POLLING_INTERVAL);
+
+        // Cleanup interval on component unmount
+        return () => clearInterval(intervalId);
+    }, []);
+
+    // Fetch notifications when notificationsOpen changes
+    useEffect(() => {
+        if (notificationsOpen) {
+            fetchNotifications();
+        }
+    }, [notificationsOpen]);
+
+    const handleNotificationClick = async (notification) => {
+        try {
+            if (!notification.read) {
+                await notificationService.markAsRead(notification.id);
+                setUnreadCount(prev => Math.max(0, prev - 1));
+            }
+            
+            const updatedNotification = {
+                ...notification,
+                read: true,
+                lastRead: new Date().toISOString()
+            };
+            
+            setNotifications(notifications.map(n => 
+                n.id === notification.id ? updatedNotification : n
+            ));
+            
+            setSelectedNotification(updatedNotification);
+        } catch (error) {
+            console.error('Error handling notification click:', error);
+        }
+    };
+
+    const deleteNotification = async (id) => {
+        try {
+            await notificationService.deleteNotification(id);
+            setNotifications(notifications.filter(n => n.id !== id));
+            if (selectedNotification?.id === id) {
+                setSelectedNotification(null);
+            }
+            // Update unread count if the deleted notification was unread
+            const deletedNotification = notifications.find(n => n.id === id);
+            if (deletedNotification && !deletedNotification.read) {
+                setUnreadCount(prev => Math.max(0, prev - 1));
+            }
+        } catch (error) {
+            console.error('Error deleting notification:', error);
+        }
+    };
+
+    // Function to add a new notification (for system events)
+    const addNotification = async (notificationData) => {
+        try {
+            const newNotification = await notificationService.createNotification(notificationData);
+            setNotifications(prev => [newNotification, ...prev]);
+            if (!newNotification.read) {
+                setUnreadCount(prev => prev + 1);
+            }
+        } catch (error) {
+            console.error('Error adding notification:', error);
+        }
+    };
 
     // DEBUG: Log userData to verify what is being used for initials
     useEffect(() => {
@@ -220,21 +312,6 @@ const Navbar = ({ darkMode, setDarkMode, currentUser, isHomePage = false }) => {
         setNotificationsOpen(!notificationsOpen);
     };
 
-    const handleNotificationClick = (notification) => {
-        setSelectedNotification(notification);
-        // Mark notification as read
-        setNotifications(notifications.map(n => 
-            n.id === notification.id ? {...n, read: true} : n
-        ));
-    };
-
-    const deleteNotification = (id) => {
-        setNotifications(notifications.filter(n => n.id !== id));
-        setSelectedNotification(null);
-    };
-
-    const unreadCount = notifications.filter(n => !n.read).length;
-
     useEffect(() => {
         const updateDate = () => {
             const date = new Date();
@@ -349,13 +426,23 @@ const Navbar = ({ darkMode, setDarkMode, currentUser, isHomePage = false }) => {
                                         {unreadCount > 0 && <span className="unread-count">{unreadCount} unread</span>}
                                     </div>
                                     <div className="dropdown-divider"></div>
-                                    {notifications.length > 0 ? (
+                                    {notificationsLoading ? (
+                                        <div className="notifications-loading">Loading notifications...</div>
+                                    ) : notificationsError ? (
+                                        <div className="notifications-error">{notificationsError}</div>
+                                    ) : notifications.length > 0 ? (
                                         <div className="navbar-notifications-list">
                                         {notifications.map(notification => (
-                                            <div key={notification.id} className={`navbar-notifications-item ${!notification.read ? 'unread' : ''}`} onClick={(e) => { e.stopPropagation(); handleNotificationClick(notification); }}>
+                                            <div 
+                                                key={notification.id} 
+                                                className={`navbar-notifications-item ${!notification.read ? 'unread' : ''}`} 
+                                                onClick={(e) => { e.stopPropagation(); handleNotificationClick(notification); }}
+                                            >
                                                 <div className="navbar-notifications-title">{notification.title}</div>
-                                                <div className="navbar-notifications-preview">{notification.message.substring(0, 50)}...</div>
-                                                <div className="navbar-notifications-date">{notification.date}</div>
+                                                <div className="navbar-notifications-preview">{notification.message}</div>
+                                                <div className="navbar-notifications-date">
+                                                    {new Date(notification.createdAt).toLocaleString()}
+                                                </div>
                                             </div>
                                         ))}
                                         </div>

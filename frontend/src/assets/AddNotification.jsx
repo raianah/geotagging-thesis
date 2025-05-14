@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Bell, Info, AlertTriangle, Syringe, WrenchIcon } from 'lucide-react';
+import { notificationService } from '../services/notificationService';
 
 export default function AddNotification() {
     const [showNotificationModal, setShowNotificationModal] = useState(false);
@@ -7,23 +8,39 @@ export default function AddNotification() {
     const [notificationDescription, setNotificationDescription] = useState('');
     const [selectedTemplate, setSelectedTemplate] = useState('');
     
-    // Notification templates
-    const templates = {
-        info: {
-            title: 'Information Update',
-            description: 'Important information: This is a general system update notification. Please read carefully and acknowledge.',
-        },
-        asf_alert: {
-            title: 'ASF Alert',
-            description: 'Critical ASF Alert: Action required immediately. Please check your dashboard for more details.',
-        },
-        vaccination_drive: {
-            title: 'Vaccination Drive Announcement',
-            description: 'Vaccination drive scheduled. Details: location, time, and requirements are available on the main portal.',
-        },
-        maintenance: {
-            title: 'System Maintenance',
-            description: 'Scheduled maintenance: The system will be unavailable on [date] from [time]. Please save your work accordingly.',
+    // Dynamic template generation based on system events
+    const generateTemplate = (templateName) => {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString();
+        const timeStr = now.toLocaleTimeString();
+        const dateTimeStr = `[${dateStr} ${timeStr}]`;
+        
+        switch(templateName) {
+            case 'info':
+                return {
+                    title: 'System Update',
+                    description: `${dateTimeStr} System update notification. Please check the details.`
+                };
+            case 'asf_alert':
+                return {
+                    title: 'ASF Alert',
+                    description: `${dateTimeStr} Critical ASF alert. Please check the dashboard for immediate action required.`
+                };
+            case 'vaccination_drive':
+                return {
+                    title: 'Vaccination Update',
+                    description: `${dateTimeStr} New vaccination schedule update. Please review the details.`
+                };
+            case 'maintenance':
+                return {
+                    title: 'System Maintenance',
+                    description: `${dateTimeStr} Scheduled maintenance notification. Please check the maintenance schedule.`
+                };
+            default:
+                return {
+                    title: '',
+                    description: ''
+                };
         }
     };
 
@@ -36,32 +53,28 @@ export default function AddNotification() {
         }
         
         setSelectedTemplate(templateName);
-        
-        // Get current date and time
-        const now = new Date();
-        const dateStr = now.toLocaleDateString();
-        const timeStr = now.toLocaleTimeString();
-        const dateTimeStr = `[${dateStr} ${timeStr}]`;
-        
-        // Apply template with date/time
-        const template = templates[templateName];
+        const template = generateTemplate(templateName);
         setNotificationTitle(template.title);
-        setNotificationDescription(`${dateTimeStr} ${template.description}`);
+        setNotificationDescription(template.description);
     };
 
-    const handleSubmit = () => {
-        // Here you would handle the new notification data
-        console.log('New notification:', { 
-            template: selectedTemplate,
-            title: notificationTitle, 
-            description: notificationDescription 
-        });
-        
-        // Reset form and close modal
-        setSelectedTemplate('');
-        setNotificationTitle('');
-        setNotificationDescription('');
-        setShowNotificationModal(false);
+    const handleSubmit = async () => {
+        try {
+            const notificationData = {
+                title: notificationTitle,
+                message: notificationDescription,
+                type: selectedTemplate || 'info',
+                userId: null // Always null for global notifications
+            };
+            await notificationService.createNotification(notificationData);
+            console.log('New notification created:', notificationData);
+            setSelectedTemplate('');
+            setNotificationTitle('');
+            setNotificationDescription('');
+            setShowNotificationModal(false);
+        } catch (error) {
+            console.error('Error creating notification:', error);
+        }
     };
 
     // Get template icon based on template name
@@ -136,7 +149,7 @@ export default function AddNotification() {
                     >
                         Notification Title
                     </label>
-                                            <div className="notification-input-wrapper">
+                    <div className="notification-input-wrapper">
                         {selectedTemplate && getTemplateIcon(selectedTemplate)}
                         <input
                             id="notification-title"

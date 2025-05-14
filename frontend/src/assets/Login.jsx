@@ -4,7 +4,7 @@ import { login, getProfile } from "../services/api";
 import "../css/LoginCSS.css";
 import logo from '../img/logo.png';
 
-export default function LoginForm() {
+export default function LoginForm({ handleLogin }) {
     const [formData, setFormData] = useState({ email: "", password: "" });
     const [showPassword, setShowPassword] = useState(false);
     const [errors, setErrors] = useState({});
@@ -59,11 +59,13 @@ export default function LoginForm() {
             localStorage.setItem("profile", JSON.stringify(profile));
             setLoading(false);
             showNotification("Login successful!", "success");
-            // Robust, case-insensitive redirect based on user role
+            
+            // Call the parent's handleLogin function
+            handleLogin(profile, token);
+            
+            // Navigate based on user role
             if (profile.role && profile.role.toLowerCase() === 'employee') {
                 navigate("/employee-dashboard");
-            } else if (profile.role && profile.role.toLowerCase() === 'user') {
-                navigate("/dashboard");
             } else {
                 navigate("/dashboard");
             }
