@@ -55,6 +55,12 @@ async function runMigrations() {
             }
         }
 
+        // Add refresh_token column to blnbtghog_owners table
+        await client.query(`
+            ALTER TABLE blnbtghog_owners 
+            ADD COLUMN IF NOT EXISTS refresh_token TEXT
+        `);
+
         console.log('All migrations completed successfully');
     } catch (error) {
         console.error('Migration failed:', error);

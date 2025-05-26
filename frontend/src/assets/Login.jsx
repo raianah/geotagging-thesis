@@ -53,15 +53,14 @@ export default function LoginForm({ handleLogin }) {
         setErrors({});
         
         try {
-            const { token } = await login(formData.email, formData.password);
-            localStorage.setItem("authToken", token);
+            const response = await login(formData.email, formData.password);
             const profile = await getProfile();
             localStorage.setItem("profile", JSON.stringify(profile));
             setLoading(false);
             showNotification("Login successful!", "success");
             
-            // Call the parent's handleLogin function
-            handleLogin(profile, token);
+            // Call the parent's handleLogin function with both tokens
+            handleLogin(profile, response.accessToken);
             
             // Navigate based on user role
             if (profile.role && profile.role.toLowerCase() === 'employee') {
