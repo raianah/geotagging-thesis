@@ -1,0 +1,111 @@
+.notification-detail-modal {
+    background-color: var(--navbar-bg);
+    color: var(--navbar-text);
+    border-radius: 12px;
+    width: 95%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    animation: slide-in 0.3s ease;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.delete-button {
+    background: none;
+    border: none;
+    color: #f44336;
+    font-size: 1.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.delete-button:hover {
+    background-color: rgba(244, 67, 54, 0.1);
+}
+
+.notification-date-display {
+    padding: 0 20px;
+    margin-top: -10px;
+    margin-bottom: 10px;
+    color: var(--navbar-text);
+    opacity: 0.7;
+    font-size: 0.85rem;
+}
+
+.notification-detail-content {
+    padding: 20px;
+    line-height: 1.6;
+}
+
+.notification-detail-content ul {
+    margin: 16px 0;
+    padding-left: 20px;
+}
+
+.notification-detail-content p {
+    margin: 12px 0;
+}
+
+.message-content {
+    background-color: rgba(0, 0, 0, 0.05);
+    border-left: 3px solid #2196F3;
+    padding: 15px;
+    margin: 15px 0;
+    border-radius: 0 8px 8px 0;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    justify-content: flex-end;
+}
+
+.approve-button,
+.reschedule-button,
+.reject-button {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+}
+
+.approve-button {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.approve-button:hover {
+    background-color: #388E3C;
+}
+
+.reschedule-button {
+    background-color: #FF9800;
+    color: white;
+}
+
+.reschedule-button:hover {
+    background-color: #F57C00;
+}
+
+.reject-button {
+    background-color: #f44336;
+    color: white;
+}
+
+.reject-button:hover {
+    background-color: #D32F2F;
+}

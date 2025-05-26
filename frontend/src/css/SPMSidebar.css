@@ -1,0 +1,82 @@
+.sidebar {
+    width: 320px;
+    background: linear-gradient(135deg, #1e1e2f, #2a2a3d);
+    color: white;
+    padding: 20px;
+    overflow-y: auto;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: "Poppins", sans-serif;
+    position: relative;
+}
+
+.sidebar h2 {
+    font-size: 22px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 15px;
+    color: #ffcc00;
+}
+
+.sidebar ol {
+    list-style: none;
+    padding: 0;
+    margin-top: 10px;
+}
+
+.sidebar ol li {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    font-size: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sidebar ol li small {
+    color: #ffcc00;
+    font-size: 12px;
+}
+
+.map {
+    flex-grow: 1;
+    height: 100vh;
+    width: 100%;
+}
+
+.traffic-legend {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    padding: 10px 20px;
+    border-radius: 10px;
+    display: flex;
+    gap: 20px;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.3);
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    z-index: 1000;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+}
+
+.color-box {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    margin-right: 8px;
+}
+
+.green { background-color: green; }
+.yellow { background-color: yellow; }
+.red { background-color: red; }
+.blue { background-color: blue; }
