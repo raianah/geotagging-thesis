@@ -25,7 +25,7 @@ const app = express();
 
 // Production
 const corsOptions = {
-    origin: ['http://localhost:3000', 'http://localhost:5173', 'http://dono-03.danbot.host:4493'],
+    origin: ['https://balayanhog2025.thetwlight.xyz', 'http://dono-03.danbot.host:4493'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
@@ -54,7 +54,7 @@ app.use((req, res, next) => {
     const origin = req.headers.origin;
     const allowedOrigins = [
         'http://dono-03.danbot.host:4493',
-        'http://localhost:3000',
+        'https://balayanhog2025.thetwlight.xyz',
     ];
     
     if (origin && allowedOrigins.includes(origin)) {
@@ -75,8 +75,8 @@ app.use((req, res, next) => {
 async function logAudit(tableName, recordId, action, oldData, newData, userId) {
     try {
         await pool.query(
-            'INSERT INTO audit_logs (id, tableName, recordId, action, oldData, newData, userId) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-            [uuidv4(), tableName, recordId, action, JSON.stringify(oldData), JSON.stringify(newData), userId]
+            'INSERT INTO audit_logs (id, tableName, recordId, action, oldData, newData, "userId" ) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+            [uuidv4(), tableName, recordId, action, JSON.stringify(oldData), JSON.stringify(newData), "userId" ]
         );
     } catch (error) {
         console.error('Error logging audit:', error);
@@ -189,7 +189,7 @@ app.post("/register", async (req, res) => {
     try {
         // Check if email already exists
         const { rows: existingUsers } = await pool.query(
-            'SELECT emailAddress FROM blnbtghog_owners WHERE emailAddress = $1',
+            'SELECT "emailAddress" FROM blnbtghog_owners WHERE emailAddress = $1',
             [email]
         );
 
@@ -224,7 +224,7 @@ app.post("/register", async (req, res) => {
         };
 
         await pool.query(
-            'INSERT INTO blnbtghog_owners (uid, fullName, emailAddress, password, contactNumber, userCreated, role, validIdType, validIdUrl, verificationToken, verificationTokenExpiry, location, latitude, longitude) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)',
+            'INSERT INTO blnbtghog_owners (uid, "fullName", "emailAddress", password, "contactNumber", "userCreated", role, "validIdType", "validIdUrl", "verificationToken", "verificationTokenExpiry", location, latitude, longitude) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)',
             [
                 newUser.uid, newUser.fullName, newUser.emailAddress, newUser.password,
                 newUser.contactNumber, newUser.userCreated, newUser.role,
@@ -251,7 +251,7 @@ app.post("/register", async (req, res) => {
 app.get("/profile", authenticateToken, async (req, res) => {
     try {
         const { rows: users } = await pool.query(
-            'SELECT uid, fullName, emailAddress, contactNumber, userCreated, profilePicture, role, status FROM blnbtghog_owners WHERE uid = $1',
+            'SELECT uid, "fullName", "emailAddress", "contactNumber", "userCreated", "profilePicture", role, status FROM blnbtghog_owners WHERE uid = $1',
             [req.user.uid]
         );
         if (users.length === 0) return res.status(404).json({ error: "User not found" });
@@ -269,6 +269,7 @@ app.get("/profile", authenticateToken, async (req, res) => {
             lastName
         });
     } catch (err) {
+        console.log(err);
         res.status(500).json({ error: "Failed to retrieve profile" });
     }
 });
@@ -292,7 +293,7 @@ app.put("/profile", authenticateToken, async (req, res) => {
         const updatedPhone = contactNumber || user.contactNumber;
         const updatedProfilePicture = profilePicture || user.profilePicture;
         await pool.query(
-            'UPDATE blnbtghog_owners SET fullName = $1, emailAddress = $2, contactNumber = $3, profilePicture = $4 WHERE uid = $5',
+            'UPDATE blnbtghog_owners SET "fullName" = $1, "emailAddress" = $2, "contactNumber" = $3, "profilePicture" = $4 WHERE uid = $5;',
             [updatedFullName, updatedEmail, updatedPhone, updatedProfilePicture, req.user.uid]
         );
         res.json({ message: "Profile updated successfully" });
@@ -306,7 +307,7 @@ app.get("/accounts", authenticateToken, async (req, res) => {
     try {
         // Only return user (hog raiser) accounts, not employees
         const { rows: accounts } = await pool.query(
-            'SELECT uid, fullName, emailAddress, contactNumber, userCreated, role, status, location, latitude, longitude FROM blnbtghog_owners WHERE LOWER(role) = $1',
+            'SELECT uid, "fullName", "emailAddress", "contactNumber", "userCreated", role, status, location, latitude, longitude FROM blnbtghog_owners WHERE LOWER(role) = $1',
             ['user']
         );
         res.json(accounts);
@@ -320,7 +321,7 @@ app.get("/pending-accounts", authenticateToken, async (req, res) => {
     try {
         // Only return pending user (hog raiser) accounts, not employees
         const { rows: pending } = await pool.query(
-            'SELECT uid, fullName, emailAddress, contactNumber, userCreated, role, status, location, latitude, longitude FROM blnbtghog_owners WHERE LOWER(role) = $1 AND LOWER(status) = $2',
+            'SELECT uid, "fullName", "emailAddress", "contactNumber", "userCreated", role, status, location, latitude, longitude FROM blnbtghog_owners WHERE LOWER(role) = $1 AND LOWER(status) = $2',
             ['user', 'pending']
         );
         res.json(pending);
@@ -372,7 +373,7 @@ app.post("/farms", authenticateToken, async (req, res) => {
         
         // Insert farm
         await pool.query(
-            'INSERT INTO farms (id, ownerUid, branchName, address, city, province, pigCount, farmSize, farmType, createdAt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
+            'INSERT INTO farms (id, "ownerUid", "branchName", address, city, province, "pigCount", "farmSize", "farmType", "createdAt") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
             [id, req.user.uid, branchName, address, city, province, pigCount, farmSize, farmType, createdAt]
         );
 
@@ -382,7 +383,7 @@ app.post("/farms", authenticateToken, async (req, res) => {
             for (const hog of hogs) {
                 const hogId = uuidv4();
                 await pool.query(
-                    'INSERT INTO hogs (id, farmId, breed, gender, birthday, photos, createdAt) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+                    'INSERT INTO hogs (id, "farmId", breed, gender, birthday, photos, "createdAt") VALUES ($1, $2, $3, $4, $5, $6, $7)',
                     [hogId, id, hog.breed, hog.gender, hog.birthday, JSON.stringify(hog.photos), createdAt]
                 );
             }
@@ -424,7 +425,7 @@ app.post("/asf-outbreak-reports", authenticateToken, async (req, res) => {
         const id = uuidv4();
         const createdAt = new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' });
         await pool.query(
-            'INSERT INTO asf_outbreak_reports (id, dateReported, barangay, municipality, province, reportedByUid, description, status, createdAt) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+            'INSERT INTO asf_outbreak_reports (id, "dateReported", barangay, municipality, province, "reportedByUid", description, status, "createdAt") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
             [id, dateReported, barangay, municipality, province, req.user.uid, description, status, createdAt]
         );
         res.status(201).json({ message: "ASF outbreak report added successfully" });
@@ -438,13 +439,13 @@ app.get("/dashboard-data", authenticateToken, async (req, res) => {
     try {
         // Get account info
         const { rows: users } = await pool.query(
-            'SELECT uid, fullName, emailAddress, contactNumber, userCreated FROM blnbtghog_owners WHERE uid = $1',
+            'SELECT uid, "fullName", "emailAddress", "contactNumber", "userCreated" FROM blnbtghog_owners WHERE uid = $1',
             [req.user.uid]
         );
         const user = users[0];
         // Get farms for user
         const { rows: farms } = await pool.query(
-            'SELECT * FROM farms WHERE ownerUid = $1',
+            'SELECT * FROM farms WHERE "ownerUid" = $1',
             [req.user.uid]
         );
         // Add computed fields for frontend compatibility
@@ -664,7 +665,7 @@ app.delete("/accounts/:uid", authenticateToken, async (req, res) => {
 
         try {
             // Delete associated farms
-            await pool.query('DELETE FROM farms WHERE ownerUid = $1', [uid]);
+            await pool.query('DELETE FROM farms WHERE "ownerUid" = $1', [uid]);
             console.log(`Deleted farms for user ${uid}`);
         } catch (err) {
             console.warn("Error deleting farms:", err);
@@ -673,7 +674,7 @@ app.delete("/accounts/:uid", authenticateToken, async (req, res) => {
         
         try {
             // Delete associated notifications
-            await pool.query('DELETE FROM notifications WHERE userId = $1', [uid]);
+            await pool.query('DELETE FROM notifications WHERE "userId"  = $1', [uid]);
             console.log(`Deleted notifications for user ${uid}`);
         } catch (err) {
             console.warn("Error deleting notifications:", err);
@@ -711,7 +712,7 @@ app.get("/hog-owner/:uid", authenticateToken, async (req, res) => {
         
         // Get owner details
         const { rows: owners } = await pool.query(
-            'SELECT uid, fullName, emailAddress, contactNumber, userCreated, role, status, location, latitude, longitude, validIdType, validIdUrl FROM blnbtghog_owners WHERE uid = $1',
+            'SELECT uid, "fullName", "emailAddress", "contactNumber", "userCreated", role, status, location, latitude, longitude, "validIdType", "validIdUrl" FROM blnbtghog_owners WHERE uid = $1',
             [req.params.uid]
         );
 
@@ -732,7 +733,7 @@ app.get("/hog-owner/:uid", authenticateToken, async (req, res) => {
 
         // Get farm details
         const { rows: farms } = await pool.query(
-            'SELECT * FROM farms WHERE ownerUid = $1',
+            'SELECT * FROM farms WHERE "ownerUid" = $1',
             [req.params.uid]
         );
 
@@ -741,7 +742,7 @@ app.get("/hog-owner/:uid", authenticateToken, async (req, res) => {
         // Get hogs for each farm
         for (let farm of farms) {
             const { rows: hogs } = await pool.query(
-                'SELECT * FROM hogs WHERE farmId = $1',
+                'SELECT * FROM hogs WHERE "farmId" = $1',
                 [farm.id]
             );
             farm.hogs = hogs.map(hog => ({
@@ -789,7 +790,7 @@ app.post("/api/notifications", authenticateToken, async (req, res) => {
         } else {
             // Get all active users
             const { rows: allUsers } = await pool.query(
-                'SELECT uid FROM blnbtghog_owners WHERE isActive = true'
+                'SELECT uid FROM blnbtghog_owners WHERE "isActive" = true'
             );
             users = allUsers.map(user => user.uid);
         }
@@ -801,7 +802,7 @@ app.post("/api/notifications", authenticateToken, async (req, res) => {
         for (const userId of users) {
             const id = uuidv4();
             await pool.query(
-                'INSERT INTO notifications (id, userId, title, message, type, isRead, createdAt) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+                'INSERT INTO notifications (id, "userId", title, message, type, isRead, "createdAt") VALUES ($1, $2, $3, $4, $5, $6, $7)',
                 [id, userId, title, message, type || 'info', false, new Date().toISOString()]
             );
             notifications.push({
@@ -828,7 +829,7 @@ app.get("/api/notifications", authenticateToken, async (req, res) => {
     try {
         console.log(`Fetching notifications for user ${req.user.uid}`);
         // Only fetch notifications for the current user
-        const { rows: notifications } = await pool.query('SELECT * FROM notifications WHERE userId = $1 ORDER BY createdAt DESC', [req.user.uid]);
+        const { rows: notifications } = await pool.query('SELECT * FROM notifications WHERE "userId"  = $1 ORDER BY "createdAt" DESC', [req.user.uid]);
         console.log(`Found ${notifications.length} notifications for user ${req.user.uid}`);
         res.json(notifications);
     } catch (err) {
@@ -841,7 +842,7 @@ app.get("/api/notifications", authenticateToken, async (req, res) => {
 app.get("/api/notifications/unread/count", authenticateToken, async (req, res) => {
     try {
         console.log(`Getting unread count for user ${req.user.uid}`);
-        const { rows: result } = await pool.query('SELECT COUNT(*) as count FROM notifications WHERE userId = $1 AND isRead = false', [req.user.uid]);
+        const { rows: result } = await pool.query('SELECT COUNT(*) as count FROM notifications WHERE "userId"  = $1 AND "isRead" = false', [req.user.uid]);
         console.log(`User ${req.user.uid} has ${result[0].count} unread notifications`);
         res.json({ count: result[0].count });
     } catch (err) {
@@ -856,7 +857,7 @@ app.put("/api/notifications/:id/read", authenticateToken, async (req, res) => {
     try {
         console.log(`Marking notification ${id} as read for user ${req.user.uid}`);
         // Only mark as read for the current user
-        const result = await pool.query('UPDATE notifications SET isRead = true WHERE id = $1 AND userId = $2', [id, req.user.uid]);
+        const result = await pool.query('UPDATE notifications SET "isRead" = true WHERE id = $1 AND "userId"  = $2', [id, req.user.uid]);
         console.log(`Updated ${result.rowCount} notifications`);
         res.json({ message: "Notification marked as read" });
     } catch (err) {
@@ -871,7 +872,7 @@ app.delete("/api/notifications/:id", authenticateToken, async (req, res) => {
     try {
         console.log(`Deleting notification ${id} for user ${req.user.uid}`);
         // Only delete for the current user
-        const result = await pool.query('DELETE FROM notifications WHERE id = $1 AND userId = $2', [id, req.user.uid]);
+        const result = await pool.query('DELETE FROM notifications WHERE id = $1 AND "userId"  = $2', [id, req.user.uid]);
         console.log(`Deleted ${result.rowCount} notifications`);
         if (result.rowCount === 0) {
             return res.status(404).json({ error: "Notification not found or not authorized" });

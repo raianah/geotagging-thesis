@@ -1,6 +1,6 @@
 // Centralized API utility for frontend
 import axios from "axios";
-const API_BASE = "http://extreme9i1j.creepercloud.io:26229";
+const API_BASE = "https://blnbtg-backend.thetwlight.xyz";
 
 function getToken() {
     const token = localStorage.getItem("accessToken");
