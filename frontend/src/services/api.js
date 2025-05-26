@@ -3,7 +3,7 @@ import axios from "axios";
 const API_BASE = "http://extreme9i1j.creepercloud.io:26229";
 
 function getToken() {
-    const token = localStorage.getItem("authToken");
+    const token = localStorage.getItem("accessToken");
     console.log('Retrieved token:', token);
     return token;
 }
@@ -21,6 +21,31 @@ function getHeaders(isJson = true, requireAuth = true) {
         }
     }
     return headers;
+}
+
+// Function to refresh access token
+async function refreshAccessToken() {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) {
+        throw new Error('No refresh token available');
+    }
+
+    try {
+        const response = await axios.post(`${API_BASE}/refresh-token`, {
+            refreshToken
+        });
+        
+        const { accessToken } = response.data;
+        localStorage.setItem('accessToken', accessToken);
+        return accessToken;
+    } catch (error) {
+        // If refresh fails, clear tokens and redirect to login
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('userId');
+        window.location.href = '/login';
+        throw error;
+    }
 }
 
 export async function apiRequest(endpoint, method = "GET", data = null, requireAuth = true) {
@@ -41,6 +66,23 @@ export async function apiRequest(endpoint, method = "GET", data = null, requireA
         return response.data;
     } catch (error) {
         if (error.response) {
+            // If token expired, try to refresh
+            if (error.response.status === 401 && requireAuth) {
+                try {
+                    await refreshAccessToken();
+                    // Retry the original request with new token
+                    const retryResponse = await axios({
+                        method,
+                        url,
+                        data: data || undefined,
+                        headers: getHeaders(true, requireAuth),
+                        timeout: 10000,
+                    });
+                    return retryResponse.data;
+                } catch (refreshError) {
+                    throw new Error('Session expired. Please login again.');
+                }
+            }
             throw new Error(error.response.data?.error || error.response.statusText);
         }
         throw error;
@@ -55,18 +97,19 @@ export async function login(email, password) {
         if (response.user?.uid) {
             localStorage.setItem('userId', response.user.uid);
         }
-        if (response.token) {
-            localStorage.setItem('authToken', response.token);
+        if (response.accessToken) {
+            localStorage.setItem('accessToken', response.accessToken);
+        }
+        if (response.refreshToken) {
+            localStorage.setItem('refreshToken', response.refreshToken);
         }
 
         return response;
-
     } catch (error) {
         console.error("Login failed:", error.message || error);
         throw error;
     }
 }
-
 
 export function register(data) {
     return apiRequest("/register", "POST", data, false);

@@ -294,7 +294,8 @@ const Navbar = ({ darkMode, setDarkMode, currentUser, isHomePage = false }) => {
     };
 
     const handleLogout = () => {
-        localStorage.removeItem('authToken');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
         localStorage.removeItem('userData');
         navigate('/login');
     };

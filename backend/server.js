@@ -114,12 +114,25 @@ app.post("/login", async (req, res) => {
             return res.status(401).json({ error: "Invalid credentials" });
         }
 
-        // console.log('Signing JWT');
-        // const token = jwt.sign(
-        //     { uid: user.uid },
-        //     process.env.JWT_SECRET || 'your-secret-key',
-        //     { expiresIn: '24h' }
-        // );
+        // Generate access token (15 minutes)
+        const accessToken = jwt.sign(
+            { uid: user.uid },
+            process.env.JWT_SECRET || 'your-secret-key',
+            { expiresIn: '15m' }
+        );
+
+        // Generate refresh token (7 days)
+        const refreshToken = jwt.sign(
+            { uid: user.uid },
+            process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key',
+            { expiresIn: '7d' }
+        );
+
+        // Store refresh token in database
+        await pool.query(
+            'UPDATE blnbtghog_owners SET refresh_token = $1 WHERE uid = $2',
+            [refreshToken, user.uid]
+        );
 
         console.log('Login successful for user:', user.uid);
         res.status(200).json({
@@ -129,7 +142,8 @@ app.post("/login", async (req, res) => {
                 fullName: user.fullName,
                 emailAddress: user.emailAddress,
             },
-            // token
+            accessToken,
+            refreshToken
         });
     } catch (err) {
         console.error("Login error:", err);
@@ -917,3 +931,39 @@ startServer();
 // }
 
 // startServer();
+
+// Refresh token endpoint
+app.post("/refresh-token", async (req, res) => {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+        return res.status(401).json({ error: "Refresh token is required" });
+    }
+
+    try {
+        // Verify refresh token
+        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key');
+        
+        // Check if refresh token exists in database
+        const { rows } = await pool.query(
+            'SELECT * FROM blnbtghog_owners WHERE uid = $1 AND refresh_token = $2',
+            [decoded.uid, refreshToken]
+        );
+
+        if (rows.length === 0) {
+            return res.status(401).json({ error: "Invalid refresh token" });
+        }
+
+        // Generate new access token
+        const accessToken = jwt.sign(
+            { uid: decoded.uid },
+            process.env.JWT_SECRET || 'your-secret-key',
+            { expiresIn: '15m' }
+        );
+
+        res.json({ accessToken });
+    } catch (err) {
+        console.error("Refresh token error:", err);
+        return res.status(401).json({ error: "Invalid refresh token" });
+    }
+});
