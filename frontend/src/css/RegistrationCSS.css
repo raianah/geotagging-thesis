@@ -63,7 +63,7 @@ body, html {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 5px;
 }
 
 .logo {
@@ -402,10 +402,36 @@ input:focus, select:focus {
     cursor: pointer;
     margin-top: 10px;
     transition: background-color 0.3s;
+    width: 100%;
 }
 
 .register-btn:hover {
     background-color: #ff5252;
+}
+
+.reg-back-btn {
+    background-color: transparent;
+    color: var(--text-color);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.register-button-container {
+    display: flex;
+    gap: 10px;
+    justify-content: space-evenly;
+    align-items: flex-end;
+    width: 100%;
+    border-radius: 6px;
 }
 
 /* CSS for the privacy policy checkbox in the registration form */

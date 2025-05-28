@@ -174,8 +174,12 @@ export default function LoginForm({ handleLogin }) {
                                 {errors.password && <span className="error-message">{errors.password}</span>}
                             </div>
                         </div>
+
+                        <div className="button-container">
+                            <button type="button" className="back-btn" onClick={() => navigate("/")}>Back to Home</button>
+                            <button type="submit" className="login-btn" disabled={loading}>{loading ? "Logging in..." : "Login"}</button>
+                        </div>
                         
-                        <button type="submit" className="login-btn" disabled={loading}>{loading ? "Logging in..." : "Login"}</button>
                     </form>
                     
                     <div className="register-link">

@@ -51,7 +51,7 @@
 
 .logo-container {
     text-align: center;
-    padding: 20px 0;
+    padding-top: 30px;
 }
 
 .logo {
@@ -180,11 +180,38 @@ input:focus {
     cursor: pointer;
     transition: background-color 0.3s;
     margin-top: 10px;
+    width: 100%;
 }
 
 .login-btn:hover {
     background-color: #ff5252;
 }
+
+.back-btn {
+    background-color: transparent;
+    color: var(--text-color);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.button-container {
+    display: flex;
+    gap: 10px;
+    justify-content: space-evenly;
+    align-items: flex-end;
+    width: 100%;
+    border-radius: 6px;
+}
+  
 
 .register-link {
     margin-top: 25px;
@@ -197,6 +224,8 @@ input:focus {
     text-decoration: none;
     font-weight: 500;
 }
+
+
 
 .register-link a:hover {
     text-decoration: underline;

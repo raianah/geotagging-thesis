@@ -84,7 +84,6 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.dark-mode h2,
 .dark-mode h3 {
     color: var(--primary-light);
 }
@@ -696,5 +695,9 @@ button {
 
     section {
         padding: 2rem 0;
+    }
+
+    .carousel-caption {
+        display: none;
     }
 }

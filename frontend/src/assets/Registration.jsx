@@ -1033,7 +1033,11 @@ export default function RegistrationForm() {
 
 							{errors.form && <span className="error-message">{errors.form}</span>}
 							{success && <span className="success-message">{success}</span>}
-							<button type="submit" className="register-btn" disabled={loading}>{loading ? "Registering..." : "Register"}</button>
+
+							<div className="register-btn-container">
+								<button type="button" className="reg-back-btn" onClick={() => navigate("/")}>Back to Home</button>
+								<button type="submit" className="register-btn" disabled={loading}>{loading ? "Registering..." : "Register"}</button>
+							</div>
 						</form>
 					</div>
 				)}
