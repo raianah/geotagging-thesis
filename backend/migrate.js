@@ -10,6 +10,17 @@ async function runMigrations() {
     const client = await pool.connect();
     
     try {
+        // Drop existing tables
+        console.log('Dropping existing tables...');
+        await client.query(`
+            DROP TABLE IF EXISTS hogs CASCADE;
+            DROP TABLE IF EXISTS farms CASCADE;
+            DROP TABLE IF EXISTS asf_outbreak_reports CASCADE;
+            DROP TABLE IF EXISTS audit_logs CASCADE;
+            DROP TABLE IF EXISTS blnbtghog_owners CASCADE;
+            DROP TABLE IF EXISTS migrations CASCADE;
+        `);
+
         // Create migrations table if it doesn't exist
         await client.query(`
             CREATE TABLE IF NOT EXISTS migrations (

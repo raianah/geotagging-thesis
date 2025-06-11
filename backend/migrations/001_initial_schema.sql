@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS blnbtghog_owners (
     password VARCHAR(255) NOT NULL,
     "contactNumber" VARCHAR(20) NOT NULL,
     "userCreated" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "profilePicture" VARCHAR(255),
+    "profilePicture" TEXT,
     role VARCHAR(20) NOT NULL DEFAULT 'user',
     status VARCHAR(20) NOT NULL DEFAULT 'pending',
     location TEXT,
@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS blnbtghog_owners (
     refresh_token TEXT,
     CONSTRAINT valid_latitude CHECK (latitude >= -90 AND latitude <= 90),
     CONSTRAINT valid_longitude CHECK (longitude >= -180 AND longitude <= 180),
-    CONSTRAINT valid_phone CHECK ("contactNumber" LIKE '+639%')
+    CONSTRAINT valid_phone CHECK ("contactNumber" LIKE '+639%' OR "contactNumber" LIKE '09%')
 );
 
 CREATE INDEX IF NOT EXISTS idx_email ON blnbtghog_owners("emailAddress");

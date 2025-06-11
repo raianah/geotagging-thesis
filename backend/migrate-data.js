@@ -22,8 +22,9 @@ async function migrateData() {
         console.log('Migrating users...');
         const users = await sqliteDb.all('SELECT * FROM blnbtghog_owners');
         for (const user of users) {
+            console.log('Inserting user:', user);
             await pgClient.query(
-                'INSERT INTO blnbtghog_owners (uid, fullName, emailAddress, password, contactNumber, userCreated, profilePicture, role, status, location, latitude, longitude, validIdType, validIdUrl, lastLogin, isActive, verificationToken, verificationTokenExpiry, resetPasswordToken, resetPasswordExpiry) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)',
+                'INSERT INTO blnbtghog_owners (uid, "fullName", "emailAddress", password, "contactNumber", "userCreated", "profilePicture", role, status, location, latitude, longitude, "validIdType", "validIdUrl", "lastLogin", "isActive", "verificationToken", "verificationTokenExpiry", "resetPasswordToken", "resetPasswordExpiry") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)',
                 [
                     user.uid,
                     user.fullName,
@@ -54,7 +55,7 @@ async function migrateData() {
         const farms = await sqliteDb.all('SELECT * FROM farms');
         for (const farm of farms) {
             await pgClient.query(
-                'INSERT INTO farms (id, ownerUid, branchName, address, city, province, pigCount, farmSize, farmType, createdAt, updatedAt, status, latitude, longitude) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)',
+                'INSERT INTO farms (id, "ownerUid", "branchName", address, city, province, "pigCount", "farmSize", "farmType", "createdAt", "updatedAt", status, latitude, longitude) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)',
                 [
                     farm.id,
                     farm.ownerUid,
@@ -107,7 +108,7 @@ async function migrateData() {
         const hogs = await sqliteDb.all('SELECT * FROM hogs');
         for (const hog of hogs) {
             await pgClient.query(
-                'INSERT INTO hogs (id, farmId, breed, gender, birthday, photos, createdAt) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+                'INSERT INTO hogs (id, "farmId", breed, gender, birthday, photos, "createdAt") VALUES ($1, $2, $3, $4, $5, $6, $7)',
                 [
                     hog.id,
                     hog.farmId,
@@ -125,7 +126,7 @@ async function migrateData() {
         const logs = await sqliteDb.all('SELECT * FROM audit_logs');
         for (const log of logs) {
             await pgClient.query(
-                'INSERT INTO audit_logs (id, tableName, recordId, action, oldData, newData, userId, timestamp) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+                'INSERT INTO audit_logs (id, "tableName", "recordId", action, oldData, newData, "userId", timestamp) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
                 [
                     log.id,
                     log.tableName,
