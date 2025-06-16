@@ -382,7 +382,7 @@ const Navbar = ({ darkMode, setDarkMode, currentUser, isHomePage = false }) => {
                             <span className="govt-text-small text-center">Republic of the Philippines</span>
                             <hr className="govt-text-divider" />
                             <span className="govt-text-normal text-center">Municipality of Balayan</span>
-                            <span className="govt-text-normal text-center">Hog Registry</span>
+                            <span className="govt-text-normal text-center">Online Hog Registry</span>
                             </>
                         ) : (
                             <>

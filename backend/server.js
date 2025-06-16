@@ -15,25 +15,26 @@ dotenv.config();
 const app = express();
 
 // Configure CORS with more specific options (Development)
-// const corsOptions = {
-//     origin: ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000', 'http://127.0.0.1:3001'],
-//     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-//     allowedHeaders: ['Content-Type', 'Authorization'],
-//     credentials: true,
-//     maxAge: 86400 // 24 hours
-// };
-
-// Production
 const corsOptions = {
-    origin: ['https://balayanhog2025.thetwlight.xyz', 'http://dono-03.danbot.host:4493'],
+    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000', 'http://127.0.0.1:3001', 'http://localhost:4493'],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
     maxAge: 86400 // 24 hours
 };
 
+// Production
+// const corsOptions = {
+//     origin: ['https://balayanhog2025.thetwlight.xyz', 'http://dono-03.danbot.host:4493'],
+//     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+//     allowedHeaders: ['Content-Type', 'Authorization'],
+//     credentials: true,
+//     maxAge: 86400 // 24 hours
+// };
+
 // Apply CORS middleware
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // Increase payload limits
 app.use(express.json({ 
@@ -776,7 +777,7 @@ app.get("/hog-owner/:uid", authenticateToken, async (req, res) => {
 // Notification API endpoints
 
 // Create a new notification (POST /api/notifications)
-app.post("/api/notifications", authenticateToken, async (req, res) => {
+app.post("/notifications", authenticateToken, async (req, res) => {
     const { title, message, type, targetUsers } = req.body;
     if (!title || !message) {
         return res.status(400).json({ error: "Title and message are required" });
@@ -824,8 +825,8 @@ app.post("/api/notifications", authenticateToken, async (req, res) => {
     }
 });
 
-// Fetch notifications (GET /api/notifications)
-app.get("/api/notifications", authenticateToken, async (req, res) => {
+// Fetch notifications (GET /notifications)
+app.get("/notifications", authenticateToken, async (req, res) => {
     try {
         console.log(`Fetching notifications for user ${req.user.uid}`);
         // Only fetch notifications for the current user
@@ -838,8 +839,8 @@ app.get("/api/notifications", authenticateToken, async (req, res) => {
     }
 });
 
-// Get unread notification count (GET /api/notifications/unread/count)
-app.get("/api/notifications/unread/count", authenticateToken, async (req, res) => {
+// Get unread notification count (GET /notifications/unread/count)
+app.get("/notifications/unread/count", authenticateToken, async (req, res) => {
     try {
         console.log(`Getting unread count for user ${req.user.uid}`);
         const { rows: result } = await pool.query('SELECT COUNT(*) as count FROM notifications WHERE "userId"  = $1 AND "isRead" = false', [req.user.uid]);
@@ -852,7 +853,7 @@ app.get("/api/notifications/unread/count", authenticateToken, async (req, res) =
 });
 
 // Mark notification as read (PUT /api/notifications/:id/read)
-app.put("/api/notifications/:id/read", authenticateToken, async (req, res) => {
+app.put("/notifications/:id/read", authenticateToken, async (req, res) => {
     const { id } = req.params;
     try {
         console.log(`Marking notification ${id} as read for user ${req.user.uid}`);
@@ -867,7 +868,7 @@ app.put("/api/notifications/:id/read", authenticateToken, async (req, res) => {
 });
 
 // Delete notification (DELETE /api/notifications/:id)
-app.delete("/api/notifications/:id", authenticateToken, async (req, res) => {
+app.delete("/notifications/:id", authenticateToken, async (req, res) => {
     const { id } = req.params;
     try {
         console.log(`Deleting notification ${id} for user ${req.user.uid}`);
@@ -885,7 +886,7 @@ app.delete("/api/notifications/:id", authenticateToken, async (req, res) => {
 });
 
 // Get verified hog owners' locations
-app.get('/api/verified-hog-owners', authenticateToken, async (req, res) => {
+app.get('/verified-hog-owners', authenticateToken, async (req, res) => {
     try {
         console.log('Fetching verified hog owners...');
         const { rows: owners } = await pool.query('SELECT ho.uid, ho.fullName as name, ho.latitude, ho.longitude, ho.status FROM blnbtghog_owners ho WHERE ho.status = $1 AND ho.latitude IS NOT NULL AND ho.longitude IS NOT NULL', ['verified']);

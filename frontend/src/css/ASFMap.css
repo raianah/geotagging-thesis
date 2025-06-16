@@ -406,3 +406,182 @@
 .asf-error {
     color: #f44336;
 }
+
+/* Control Section */
+.asf-control-section {
+    margin: 15px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.asf-control-btn {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 13px;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.asf-add-btn {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.asf-add-btn:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-1px);
+}
+
+.asf-notification-btn {
+    background-color: var(--warning-color);
+    color: white;
+    position: relative;
+}
+
+.asf-notification-btn:hover {
+    background-color: #e67e22;
+}
+
+/* Notifications Panel */
+.asf-notifications-panel {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    padding: 10px;
+    margin: 10px 0;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.asf-notifications-panel h4 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: var(--text-color);
+}
+
+.asf-notification {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px;
+    margin-bottom: 4px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.asf-notification.depopulation {
+    background-color: rgba(255, 77, 77, 0.2);
+    border-left: 3px solid #ff4d4d;
+}
+
+.asf-notification.surveillance {
+    background-color: rgba(255, 214, 51, 0.2);
+    border-left: 3px solid #ffd633;
+}
+
+/* Markers List */
+.asf-markers-list {
+    margin-top: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.asf-marker-item {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 5px;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.asf-marker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.asf-marker-controls {
+    display: flex;
+    gap: 5px;
+}
+
+.asf-marker-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+}
+
+.asf-marker-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.asf-marker-btn.locked {
+    color: var(--success-color);
+}
+
+.asf-marker-btn.unlocked {
+    color: var(--warning-color);
+}
+
+.asf-marker-btn.remove {
+    color: var(--danger-color);
+}
+
+.asf-marker-coords {
+    font-size: 11px;
+    color: var(--text-light);
+    margin-bottom: 8px;
+}
+
+/* Mobile Adjustments */
+@media (max-width: 768px) {
+    .asf-control-section {
+        margin: 10px 0;
+    }
+    
+    .asf-control-btn {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+    
+    .asf-notifications-panel {
+        max-height: 100px;
+    }
+    
+    .asf-marker-item {
+        padding: 8px;
+    }
+    
+    .asf-marker-header {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    
+    .asf-marker-controls {
+        gap: 3px;
+    }
+}
+
+/* Scrollbar for notifications */
+.asf-notifications-panel::-webkit-scrollbar {
+    width: 4px;
+}
+
+.asf-notifications-panel::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.asf-notifications-panel::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+}

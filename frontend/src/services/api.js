@@ -1,6 +1,7 @@
 // Centralized API utility for frontend
 import axios from "axios";
-const API_BASE = "https://blnbtg-backend.thetwlight.xyz";
+// const API_BASE = "https://blnbtg-backend.thetwlight.xyz";
+const API_BASE = import.meta.env.VITE_API_BASE;
 
 function getToken() {
     const token = localStorage.getItem("accessToken");
