@@ -134,10 +134,8 @@ const ZoneItem = ({ zone, affectedOwners }) => {
                 <MdLocationPin className="asf-zone-icon" />
                 <span>{zone.label}</span>
                 <div className="asf-owners-count">
-                    {affectedOwners.length > 0 ? `${affectedOwners.length} farms` : ''}
-                    {affectedOwners.length > 0 && (
-                        isOpen ? <FiChevronUp className="asf-dropdown-icon" /> : <FiChevronDown className="asf-dropdown-icon" />
-                    )}
+                    {zone.count} farms
+                    {isOpen ? <FiChevronUp className="asf-dropdown-icon" /> : <FiChevronDown className="asf-dropdown-icon" />}
                 </div>
             </div>
             {isMobile && <div className="asf-coords">{zone.radius / 1000}KM radius</div>}
@@ -161,116 +159,74 @@ const ZoneItem = ({ zone, affectedOwners }) => {
     );
 };
 
-const OptimizedSidebar = ({ position, location, zones, getAffectedOwners, markers = [], notifications = [], onAddMarker, onRemoveMarker, onSetMarker,isMobile = false }) => {
-    const [showNotifications, setShowNotifications] = useState(false);
-    
+const OptimizedSidebar = ({
+    outbreakLocation,
+    asfPositiveFarmsList,
+    affectedZonesData,
+    visibleZones,
+    isMobile = false
+}) => {
     return (
         <div className="asf-sidebar">
             <h2 className="asf-title">
-                {isMobile ? "ASF Detection" : "ASF Detection System"}
+                ASF Map (Show Outbreak Zones)
             </h2>
-            
-            {/* Control Buttons */}
-            <div className="asf-control-section">
-                <button 
-                    className="asf-control-btn asf-add-btn"
-                    onClick={onAddMarker}
-                >
-                    Add New Outbreak Marker
-                </button>
-                
-                {notifications.length > 0 && (
-                    <button 
-                        className="asf-control-btn asf-notification-btn"
-                        onClick={() => setShowNotifications(!showNotifications)}
-                    >
-                        🔔 Notifications ({notifications.length})
-                    </button>
-                )}
-            </div>
-
-            {/* Notifications Panel */}
-            {showNotifications && notifications.length > 0 && (
-                <div className="asf-notifications-panel">
-                    <h4>Farm Alerts</h4>
-                    {notifications.slice(-5).map(notification => (
-                        <div 
-                            key={notification.id} 
-                            className={`asf-notification ${notification.zoneType}`}
-                        >
-                            <strong>{notification.zoneType === 'depopulation' ? '🚨' : '⚠️'}</strong>
-                            <span>{notification.message}</span>
-                        </div>
-                    ))}
-                </div>
-            )}
-            
             <div className="asf-section">
                 <FiAlertTriangle className="asf-icon" />
                 <span className="asf-section-text">
-                    {isMobile ? "Primary Outbreak" : "Primary ASF Outbreak Location"}
+                    ASF Outbreak Location
                 </span>
             </div>
             <div className="asf-coord-box">
-                <strong>Location:</strong> {location}
+                <strong>Location:</strong> {outbreakLocation || ''}
             </div>
-            
             <div className="asf-section">
                 <FiAlertTriangle className="asf-icon" />
                 <span className="asf-section-text">Affected Zones</span>
             </div>
             <div className="asf-zone-list">
-                {zones.map((zone, index) => (
-                    <ZoneItem 
-                        key={index} 
-                        zone={zone} 
-                        affectedOwners={getAffectedOwners(zone.radius)} 
-                    />
+                {asfPositiveFarmsList.length === 0 && (
+                    <div style={{ color: '#888', fontSize: 14, padding: '8px 0' }}>No confirmed ASF-positive farms.</div>
+                )}
+                {asfPositiveFarmsList.map((farm, idx) => (
+                    <div key={farm.uid} className="asf-zone-item" style={{ backgroundColor: '#fff', border: '1px solid #eee', marginBottom: 10 }}>
+                        <div className="asf-zone-header" style={{ cursor: 'default' }}>
+                            <MdLocationPin className="asf-zone-icon" />
+                            <span style={{ fontWeight: 600 }}>{farm.name}</span>
+                        </div>
+                        <div className="asf-owner-coords" style={{ fontSize: 12, marginBottom: 6 }}>
+                            📍 {farm.location || `${Number(farm.latitude).toFixed(4)}, ${Number(farm.longitude).toFixed(4)}`}
+                        </div>
+                        {visibleZones[farm.uid]?.depopulation && (
+                            <>
+                                <div style={{ fontWeight: 500, color: '#ff6b6b', marginBottom: 2 }}>Depopulation Zone (500m):</div>
+                                <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13 }}>
+                                    {affectedZonesData[farm.uid]?.red.length === 0 ? (
+                                        <li style={{ color: '#aaa' }}>No farms in red zone.</li>
+                                    ) : affectedZonesData[farm.uid].red.map(f => (
+                                        <li key={f.uid}>{f.name} <span style={{ color: '#888', fontSize: 11 }}>({f.location || `${Number(f.latitude).toFixed(4)}, ${Number(f.longitude).toFixed(4)}`})</span></li>
+                                    ))}
+                                </ul>
+                            </>
+                        )}
+                        {visibleZones[farm.uid]?.highRisk && (
+                            <>
+                                <div style={{ fontWeight: 500, color: '#ffd633', margin: '6px 0 2px 0' }}>High Risk Zone (1000m):</div>
+                                <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13 }}>
+                                    {affectedZonesData[farm.uid]?.yellow.length === 0 ? (
+                                        <li style={{ color: '#aaa' }}>No farms in yellow zone.</li>
+                                    ) : affectedZonesData[farm.uid].yellow.map(f => (
+                                        <li key={f.uid}>{f.name} <span style={{ color: '#888', fontSize: 11 }}>({f.location || `${Number(f.latitude).toFixed(4)}, ${Number(f.longitude).toFixed(4)}`})</span></li>
+                                    ))}
+                                </ul>
+                            </>
+                        )}
+                        {!visibleZones[farm.uid]?.depopulation && !visibleZones[farm.uid]?.highRisk && (
+                            <div style={{ color: '#aaa', fontSize: 13, margin: '6px 0' }}>No zones are currently shown for this farm.</div>
+                        )}
+                    </div>
                 ))}
             </div>
-
-            {/* Additional Markers Section */}
-            {markers.length > 0 && (
-                <>
-                    <div className="asf-section">
-                        <FiAlertTriangle className="asf-icon" />
-                        <span className="asf-section-text">Additional Outbreaks</span>
-                    </div>
-                    <div className="asf-markers-list">
-                        {markers.map(marker => (
-                            <div key={marker.id} className="asf-marker-item">
-                                <div className="asf-marker-header">
-                                    <span>Outbreak #{marker.id.slice(-4)}</span>
-                                    <div className="asf-marker-controls">
-                                        <button 
-                                            className={`asf-marker-btn ${marker.isLocked ? 'locked' : 'unlocked'}`}
-                                            onClick={() => onSetMarker(marker.id, !marker.isLocked)}
-                                        >
-                                            {marker.isLocked ? '🔒' : '🔓'}
-                                        </button>
-                                        <button 
-                                            className="asf-marker-btn remove"
-                                            onClick={() => onRemoveMarker(marker.id)}
-                                        >
-                                            ❌
-                                        </button>
-                                    </div>
-                                </div>
-                                <div className="asf-marker-coords">
-                                    📍 {marker.position[0].toFixed(4)}, {marker.position[1].toFixed(4)}
-                                </div>
-                                {marker.zones.map(zone => (
-                                    <ZoneItem 
-                                        key={zone.id}
-                                        zone={zone} 
-                                        affectedOwners={getAffectedOwners(zone.radius, marker.position)} 
-                                    />
-                                ))}
-                            </div>
-                        ))}
-                    </div>
-                </>
-            )}
         </div>
     );
 };
@@ -292,23 +248,25 @@ const ClientOnlyMap = ({ children, ...props }) => {
 
 // Full ASF Map Content
 const ASFMapContent = () => {
-    const [mapComponents, setMapComponents] = useState(null);
-    const [position, setPosition] = useState([13.9333, 120.733]); // Default position
-    const [hasSelected, setHasSelected] = useState(false);
-    const [location, setLocation] = useState("Fetching location...");
-    const mapContainerRef = useRef(null);
-    const [isMobile, setIsMobile] = useState(false);
-    const [hogOwners, setHogOwners] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [markers, setMarkers] = useState([]);
-    const [showHogOwners, setShowHogOwners] = useState(false);
+    const [hogOwners, setHogOwners] = useState([]);
+    const [showHogOwners, setShowHogOwners] = useState(true);
+    const [position, setPosition] = useState([13.9374, 120.7335]);
+    const [location, setLocation] = useState("");
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+    const [mapComponents, setMapComponents] = useState(null);
+    const [hasSelected, setHasSelected] = useState(false);
+    const mapContainerRef = useRef(null);
+    const [selectedMarker, setSelectedMarker] = useState(null);
+    const [visibleZones, setVisibleZones] = useState({});
+    const [asfPositiveFarms, setAsfPositiveFarms] = useState(new Set());
     const [zones, setZones] = useState([
-        { id: 'zone1', label: 'Depopulation Zone', radius: 500, color: '#ff6b6b' },
-        { id: 'zone2', label: 'High Risk Zone', radius: 1000, color: '#ff6b6b' },
+        { id: 'zone1', label: 'Depopulation Zone', radius: 500, color: '#ff6b6b', count: 0 },
+        { id: 'zone2', label: 'High Risk Zone', radius: 1000, color: '#ffd633', count: 0 },
     ]);
-    const [activeMarkerId, setActiveMarkerId] = useState(null);
     const [notifications, setNotifications] = useState([]);
+    const [outbreakAddress, setOutbreakAddress] = useState("");
     
     // ALL useEffect hooks must come before any early returns
     useEffect(() => {
@@ -352,16 +310,23 @@ const ASFMapContent = () => {
         const fetchHogOwners = async () => {
             try {
                 setLoading(true);
+                setError(null);
                 const response = await getVerifiedHogOwners();
                 if (Array.isArray(response)) {
-                    setHogOwners(response);
-                    setError(null);
+                    if (response.length === 0) {
+                        setError('No verified hog owners found with location data');
+                    } else {
+                        setHogOwners(response);
+                    }
                 } else {
-                    setError('Invalid response format');
+                    setError('Invalid response format from server');
                     console.error('Invalid response format:', response);
                 }
             } catch (err) {
-                setError('Failed to fetch hog owner data');
+                const errorMessage = err.message === 'Session expired. Please login again.' 
+                    ? 'Your session has expired. Please log in again.'
+                    : 'Failed to fetch hog owner data. Please try again later.';
+                setError(errorMessage);
                 console.error('Error fetching hog owners:', err);
             } finally {
                 setLoading(false);
@@ -397,47 +362,112 @@ const ASFMapContent = () => {
         return <div className="asf-loading">Loading map components...</div>;
     }
 
+    if (error) {
+        return (
+            <div className="asf-error">
+                <FiAlertTriangle className="asf-error-icon" />
+                <p>{error}</p>
+                {error.includes('session') && (
+                    <button 
+                        onClick={() => window.location.href = '/login'}
+                        className="asf-error-button"
+                    >
+                        Go to Login
+                    </button>
+                )}
+            </div>
+        );
+    }
+
+    if (loading) {
+        return <div className="asf-loading">Loading hog owner data...</div>;
+    }
+
     const { MapContainer, TileLayer, Circle, Marker, Popup, useMapEvents, useMap } = mapComponents;
 
-    // Calculate affected owners for each zone
-    const getAffectedOwners = (zoneRadius, markerPosition = position) => {
-        const calculateDistance = (lat1, lon1, lat2, lon2) => {
-            const R = 6371000;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = 
-                Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-                Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
-        };
-
-        return hogOwners.filter(owner => {
-            const distance = calculateDistance(
-                markerPosition[0], markerPosition[1], 
-                owner.latitude, owner.longitude
-            );
-            return distance <= zoneRadius;
-        });
-    };
-
     const handleMapClick = (e) => {
-        setPosition([e.latlng.lat, e.latlng.lng]);
         setHasSelected(true);
     };
 
-    const addNewMarker = () => {
-        const newId = Date.now().toString();
-        const newMarker = {
-            id: newId,
-            position: [position[0] + 0.001, position[1] + 0.001], // Slightly offset from current
-            isLocked: false,
-            zones: getZonesForMarker(newId)
-        };
-        setMarkers([...markers, newMarker]);
-        setActiveMarkerId(newId);
+    const handleMarkerClick = async (owner) => {
+        setSelectedMarker(owner);
+        setPosition([Number(owner.latitude), Number(owner.longitude)]);
+        // Fetch real-world address using reverse geocoding
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${owner.latitude}&lon=${owner.longitude}`);
+            const data = await response.json();
+            setOutbreakAddress(data.display_name || `${Number(owner.latitude).toFixed(4)}, ${Number(owner.longitude).toFixed(4)}`);
+        } catch (error) {
+            setOutbreakAddress(`${Number(owner.latitude).toFixed(4)}, ${Number(owner.longitude).toFixed(4)}`);
+        }
     };
+
+    const confirmAsfPositive = (owner) => {
+        setAsfPositiveFarms(prev => {
+            const newSet = new Set(prev);
+            newSet.add(owner.uid);
+            return newSet;
+        });
+        setVisibleZones(prev => ({
+            ...prev,
+            [owner.uid]: {
+                depopulation: true,
+                highRisk: true
+            }
+        }));
+    };
+
+    const clearAsfStatus = (owner) => {
+        setAsfPositiveFarms(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(owner.uid);
+            return newSet;
+        });
+        setVisibleZones(prev => {
+            const newZones = { ...prev };
+            delete newZones[owner.uid];
+            return newZones;
+        });
+    };
+
+    const toggleZone = (ownerId, zoneType) => {
+        setVisibleZones(prev => ({
+            ...prev,
+            [ownerId]: {
+                ...prev[ownerId],
+                [zoneType]: !prev[ownerId]?.[zoneType]
+            }
+        }));
+    };
+
+    // Calculate outbreakLocation (blank by default, updates on marker click)
+    const outbreakLocation = selectedMarker ? (outbreakAddress || "") : '';
+    // List of confirmed ASF-positive farms
+    const asfPositiveFarmsList = hogOwners.filter(owner => asfPositiveFarms.has(owner.uid));
+    // Calculate affected zones for each ASF-positive farm
+    const affectedZonesData = {};
+    const calculateDistance = (lat1, lon1, lat2, lon2) => {
+        const R = 6371000;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = 
+            Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+    };
+    asfPositiveFarmsList.forEach(farm => {
+        const red = [];
+        const yellow = [];
+        hogOwners.forEach(other => {
+            if (other.uid === farm.uid) return;
+            const dist = calculateDistance(Number(farm.latitude), Number(farm.longitude), Number(other.latitude), Number(other.longitude));
+            if (dist <= 500) red.push(other);
+            else if (dist <= 1000) yellow.push(other);
+        });
+        affectedZonesData[farm.uid] = { red, yellow };
+    });
 
     return (
         <div className="asf-map-wrapper">
@@ -457,162 +487,100 @@ const ASFMapContent = () => {
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" 
                         attribution="&copy; OpenStreetMap contributors" 
                     />
-                    
                     <MapEvents onClick={handleMapClick} useMapEvents={useMapEvents} />
                     <MapResizer useMap={useMap} />
                     <ResponsiveMapHandler useMap={useMap} />
-                    
-                    {/* Main outbreak zones */}
-                    {hasSelected && zones.map((zone, index) => (
-                        <Circle 
-                            key={index} 
-                            center={position} 
-                            radius={zone.radius} 
-                            color={zone.color} 
-                            fillOpacity={0.3} 
-                        />
-                    ))}
-                    
-                    {/* Additional marker zones */}
-                    {markers.map(marker => 
-                        marker.zones.map(zone => (
-                            <Circle 
-                                key={zone.id}
-                                center={marker.position} 
-                                radius={zone.radius} 
-                                color={zone.color} 
-                                fillOpacity={0.3} 
-                            />
-                        ))
-                    )}
-                    
-                    {/* Main outbreak marker */}
-                    <Marker 
-                        position={position} 
-                        icon={defaultIcon} 
-                        draggable={true} 
-                        eventHandlers={{ 
-                            dragend: (e) => { 
-                                setPosition([e.target.getLatLng().lat, e.target.getLatLng().lng]); 
-                                setHasSelected(true); 
-                            } 
-                        }}
-                    >
-                        <Popup>
-                            <div>
-                                <b>Primary ASF Outbreak</b><br />
-                                📍 {position[0].toFixed(4)}, {position[1].toFixed(4)}<br />
-                                <button 
-                                    onClick={addNewMarker}
-                                    style={{
-                                        marginTop: '8px',
-                                        padding: '4px 8px',
-                                        backgroundColor: '#ff6b6b',
-                                        color: 'white',
-                                        border: 'none',
-                                        borderRadius: '3px',
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    Add New Marker
-                                </button>
-                            </div>
-                        </Popup>
-                    </Marker>
-                    
-                    {/* Additional outbreak markers */}
-                    {markers.map(marker => (
+                    {/* Hog owner markers */}
+                    {!loading && !error && showHogOwners && hogOwners.map((owner, index) => (
                         <Marker 
-                            key={marker.id}
-                            position={marker.position} 
-                            icon={defaultIcon} 
-                            draggable={!marker.isLocked}
-                            eventHandlers={{ 
-                                dragend: (e) => { 
-                                    if (!marker.isLocked) {
-                                        updateMarkerPosition(marker.id, [e.target.getLatLng().lat, e.target.getLatLng().lng]);
-                                    }
-                                } 
+                            key={index} 
+                            position={[Number(owner.latitude), Number(owner.longitude)]} 
+                            icon={hogOwnerIcon}
+                            eventHandlers={{
+                                click: () => handleMarkerClick(owner)
                             }}
                         >
                             <Popup>
-                                <div>
-                                    <b>ASF Outbreak #{marker.id}</b><br />
-                                    📍 {marker.position[0].toFixed(4)}, {marker.position[1].toFixed(4)}<br />
-                                    <div style={{ marginTop: '8px', display: 'flex', gap: '4px', flexDirection: 'column' }}>
-                                        <button 
-                                            onClick={() => setMarkerLocked(marker.id, !marker.isLocked)}
-                                            style={{
-                                                padding: '4px 8px',
-                                                backgroundColor: marker.isLocked ? '#2ecc71' : '#f39c12',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '3px',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            {marker.isLocked ? 'Unlock' : 'Set Marker'}
-                                        </button>
-                                        <button 
-                                            onClick={() => removeMarker(marker.id)}
-                                            style={{
-                                                padding: '4px 8px',
-                                                backgroundColor: '#e74c3c',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '3px',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            Remove
-                                        </button>
+                                <div className="asf-popup-content">
+                                <b>{owner.name}</b><br />
+                                📍 {Number(owner.latitude).toFixed(4)}, {Number(owner.longitude).toFixed(4)}<br />
+                                {owner.address}
+                                    <div className="asf-zone-controls">
+                                        {!asfPositiveFarms.has(owner.uid) ? (
+                                            <button 
+                                                className="asf-confirm-btn"
+                                                onClick={() => confirmAsfPositive(owner)}
+                                            >
+                                                Confirm ASF-Positive
+                                            </button>
+                                        ) : (
+                                            <div className="asf-status">
+                                                <div className="asf-status-header">
+                                                    <span className="asf-status-badge">ASF-Positive</span>
+                                                    <button 
+                                                        className="asf-clear-btn"
+                                                        onClick={() => clearAsfStatus(owner)}
+                                                    >
+                                                        Clear Status
+                                                    </button>
+                                                </div>
+                                                <div className="asf-zone-info">
+                                                    <div className="asf-zone-info-item">
+                                                        <span className="asf-zone-color red"></span>
+                                                        Depopulation Zone (500m)
+                                                    </div>
+                                                    <div className="asf-zone-info-item">
+                                                        <span className="asf-zone-color yellow"></span>
+                                                        High Risk Zone (1000m)
+                                                    </div>
+                                                </div>
+                                                <div className="asf-zone-toggles">
+                                                    <button 
+                                                        className={`asf-zone-toggle-btn ${visibleZones[owner.uid]?.depopulation ? 'active' : ''}`}
+                                                        onClick={() => toggleZone(owner.uid, 'depopulation')}
+                                                    >
+                                                        {visibleZones[owner.uid]?.depopulation ? 'Hide' : 'Show'} Red Zone
+                                                    </button>
+                                                    <button 
+                                                        className={`asf-zone-toggle-btn ${visibleZones[owner.uid]?.highRisk ? 'active' : ''}`}
+                                                        onClick={() => toggleZone(owner.uid, 'highRisk')}
+                                                    >
+                                                        {visibleZones[owner.uid]?.highRisk ? 'Hide' : 'Show'} Yellow Zone
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </Popup>
+                            {asfPositiveFarms.has(owner.uid) && (
+                                <>
+                                    {visibleZones[owner.uid]?.depopulation && (
+                                        <Circle
+                                            center={[Number(owner.latitude), Number(owner.longitude)]}
+                                            radius={500}
+                                            pathOptions={{ color: '#ff6b6b', fillColor: '#ff6b6b', fillOpacity: 0.2 }}
+                                        />
+                                    )}
+                                    {visibleZones[owner.uid]?.highRisk && (
+                                        <Circle
+                                            center={[Number(owner.latitude), Number(owner.longitude)]}
+                                            radius={1000}
+                                            pathOptions={{ color: '#ffd633', fillColor: '#ffd633', fillOpacity: 0.2 }}
+                                        />
+                                    )}
+                                </>
+                            )}
                         </Marker>
                     ))}
-                    
-                    {/* Hog owner markers */}
-                    {!loading && !error && hogOwners.map(owner => (
-                        <Marker 
-                            key={owner.uid} 
-                            position={[owner.latitude, owner.longitude]} 
-                            icon={hogOwnerIcon}
-                        >
-                            <Popup>
-                                <b>{owner.name}</b><br />
-                                📍 {owner.latitude.toFixed(4)}, {owner.longitude.toFixed(4)}<br />
-                                {owner.address}
-                            </Popup>
-                        </Marker>
-                    ))}
-
-                    {/* Loading and Error states remain the same */}
-                    {loading && (
-                        <div className="asf-loading">
-                            Loading hog owner data...
-                        </div>
-                    )}
-
-                    {error && (
-                        <div className="asf-error">
-                            {error}
-                        </div>
-                    )}
                 </MapContainer>
             </div>
-            
             {/* Sidebar - will appear at bottom on mobile due to CSS order property */}
             <OptimizedSidebar 
-                position={position}
-                location={location}
-                zones={zones}
-                getAffectedOwners={getAffectedOwners}
-                markers={markers}
-                notifications={notifications}
-                onAddMarker={addNewMarker}
-                onRemoveMarker={removeMarker}
-                onSetMarker={setMarkerLocked}
+                outbreakLocation={outbreakLocation}
+                asfPositiveFarmsList={asfPositiveFarmsList}
+                affectedZonesData={affectedZonesData}
+                visibleZones={visibleZones}
                 isMobile={isMobile}
             />
         </div>
@@ -622,7 +590,7 @@ const ASFMapContent = () => {
 const getZonesForMarker = (markerId) => {
     return [
         { id: `zone1-${markerId}`, label: 'Depopulation Zone', radius: 500, color: '#ff6b6b' },
-        { id: `zone2-${markerId}`, label: 'High Risk Zone', radius: 1000, color: '#ff6b6b' }
+        { id: `zone2-${markerId}`, label: 'High Risk Zone', radius: 1000, color: '#ffd633' }
     ];
 };
 

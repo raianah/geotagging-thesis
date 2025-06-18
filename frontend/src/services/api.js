@@ -188,5 +188,5 @@ export function getHogOwnerDetails(uid) {
 
 // Get verified hog owners' locations
 export function getVerifiedHogOwners() {
-    return apiRequest("/api/verified-hog-owners", "GET");
+    return apiRequest("/verified-hog-owners", "GET");
 }

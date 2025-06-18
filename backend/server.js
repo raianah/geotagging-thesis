@@ -889,7 +889,10 @@ app.delete("/notifications/:id", authenticateToken, async (req, res) => {
 app.get('/verified-hog-owners', authenticateToken, async (req, res) => {
     try {
         console.log('Fetching verified hog owners...');
-        const { rows: owners } = await pool.query('SELECT ho.uid, ho.fullName as name, ho.latitude, ho.longitude, ho.status FROM blnbtghog_owners ho WHERE ho.status = $1 AND ho.latitude IS NOT NULL AND ho.longitude IS NOT NULL', ['verified']);
+        const { rows: owners } = await pool.query(
+            'SELECT ho.uid, ho."fullName" as name, ho.latitude, ho.longitude, ho.status FROM blnbtghog_owners ho WHERE ho.status = $1 AND ho.latitude IS NOT NULL AND ho.longitude IS NOT NULL',
+            ['verified']
+        );
         
         console.log(`Found ${owners.length} verified hog owners`);
         res.json(owners);
