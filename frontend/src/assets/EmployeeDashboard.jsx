@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Navbar from "./Navbar";
 import ASFMap from "./ASFMap";
 import AddNotification from "./AddNotification";
@@ -7,6 +7,15 @@ import { ChevronLeft, ChevronRight, Search, ArrowUpDown, CheckCircle, XCircle, E
 import { getAccounts, getDashboardData, getPendingAccounts, updateAccountStatus, getHogOwnerDetails } from "../services/api";
 import "../css/Navbar.css";
 import "../css/EmployeeDashboard.css";
+import { FaExclamationTriangle } from "react-icons/fa";
+
+const DEFAULT_REJECTION_REASONS = [
+    "Incomplete or invalid documents",
+    "Information mismatch",
+    "Duplicate application",
+    "Does not meet eligibility criteria",
+    "Other (please specify)"
+];
 
 const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
     const [showGraphModal, setShowGraphModal] = useState(false);
@@ -40,6 +49,16 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
     const [detailsLoading, setDetailsLoading] = useState(false);
     const [detailsError, setDetailsError] = useState(null);
     const [fullDetails, setFullDetails] = useState(null);
+
+    const [showRejectionModal, setShowRejectionModal] = useState(false);
+    const [rejectionReason, setRejectionReason] = useState("");
+    const [selectedRejectionReason, setSelectedRejectionReason] = useState("");
+    const [rejectionUid, setRejectionUid] = useState(null);
+    const [rejectionError, setRejectionError] = useState("");
+    const [rejectionLoading, setRejectionLoading] = useState(false);
+    const [showRejectionConfirm, setShowRejectionConfirm] = useState(false);
+    const rejectionModalRef = useRef(null);
+    const lastFocusedElement = useRef(null);
 
     const statTypes = [
         'Total No. of Registered Hog Raisers',
@@ -161,6 +180,42 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
         setFilteredAccounts(results);
     }, [searchTerm, sortConfig, pendingAccounts]);
 
+    // Focus trap for modal
+    useEffect(() => {
+        if (showRejectionModal) {
+            lastFocusedElement.current = document.activeElement;
+            const focusable = rejectionModalRef.current?.querySelectorAll(
+                'button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])'
+            );
+            if (focusable && focusable.length) focusable[0].focus();
+            const handleKeyDown = (e) => {
+                if (e.key === 'Escape') {
+                    handleRejectionCancel();
+                } else if (e.key === 'Tab') {
+                    // Trap focus
+                    const focusables = Array.from(focusable);
+                    const first = focusables[0];
+                    const last = focusables[focusables.length - 1];
+                    if (e.shiftKey) {
+                        if (document.activeElement === first) {
+                            e.preventDefault();
+                            last.focus();
+                        }
+                    } else {
+                        if (document.activeElement === last) {
+                            e.preventDefault();
+                            first.focus();
+                        }
+                    }
+                }
+            };
+            document.addEventListener('keydown', handleKeyDown);
+            return () => document.removeEventListener('keydown', handleKeyDown);
+        } else if (lastFocusedElement.current) {
+            lastFocusedElement.current.focus();
+        }
+    }, [showRejectionModal]);
+
     const handleCardClick = (stat) => {
         setAnimationDirection('fade-in');
         setSelectedStat(stat);
@@ -239,22 +294,80 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
     const handleAccountAction = async (uid, action) => {
         if (action !== 'approve' && action !== 'reject') return;
         const newStatus = action === 'approve' ? 'verified' : 'rejected';
+        if (action === 'reject') {
+            setRejectionUid(uid);
+            setShowRejectionModal(true);
+            setSelectedRejectionReason("");
+            setRejectionReason("");
+            setRejectionError("");
+            setShowRejectionConfirm(false);
+            return;
+        }
         try {
             await updateAccountStatus(uid, newStatus);
-            // Remove from pending list immediately
-                setPendingAccounts(prev => prev.filter(acc => acc.uid !== uid));
-                setFilteredAccounts(prev => prev.filter(acc => acc.uid !== uid));
+            setPendingAccounts(prev => prev.filter(acc => acc.uid !== uid));
+            setFilteredAccounts(prev => prev.filter(acc => acc.uid !== uid));
             if (selectedAccount && selectedAccount.uid === uid) closeDetailsModal();
             if (action === 'approve') {
                 const updated = await getAccounts();
                 setRegisteredUsers(updated.filter(acc => acc.role && acc.role.toLowerCase() === 'user' && acc.status && acc.status.toLowerCase() === 'verified'));
                 showNotification("Account was approved", 'success');
-            } else {
-                showNotification("Account rejected.", 'error');
             }
         } catch (err) {
             showNotification("Failed to update account status: " + err.message, 'error');
         }
+    };
+
+    const handleRejectionBackdrop = (e) => {
+        if (e.target.classList.contains('modal-overlay')) {
+            handleRejectionCancel();
+        }
+    };
+
+    const handleRejectionSubmit = async () => {
+        setRejectionError("");
+        if (!selectedRejectionReason) {
+            setRejectionError("Please select a reason for rejection.");
+            return;
+        }
+        if (selectedRejectionReason === 'Other (please specify)' && !rejectionReason.trim()) {
+            setRejectionError("Please specify a reason.");
+            return;
+        }
+        setShowRejectionConfirm(true);
+    };
+
+    const handleRejectionConfirm = async () => {
+        setRejectionLoading(true);
+        let reason = selectedRejectionReason;
+        if (selectedRejectionReason === 'Other (please specify)') {
+            reason = rejectionReason.trim();
+        }
+        try {
+            await updateAccountStatus(rejectionUid, 'rejected', reason);
+            setPendingAccounts(prev => prev.filter(acc => acc.uid !== rejectionUid));
+            setFilteredAccounts(prev => prev.filter(acc => acc.uid !== rejectionUid));
+            if (selectedAccount && selectedAccount.uid === rejectionUid) closeDetailsModal();
+            showNotification("Account rejected." + (reason ? ` Reason: ${reason}` : ''), 'error');
+        } catch (err) {
+            showNotification("Failed to update account status: " + err.message, 'error');
+        } finally {
+            setRejectionLoading(false);
+            setShowRejectionModal(false);
+            setRejectionUid(null);
+            setSelectedRejectionReason("");
+            setRejectionReason("");
+            setShowRejectionConfirm(false);
+        }
+    };
+
+    const handleRejectionCancel = () => {
+        setShowRejectionModal(false);
+        setRejectionUid(null);
+        setSelectedRejectionReason("");
+        setRejectionReason("");
+        setRejectionError("");
+        setShowRejectionConfirm(false);
     };
 
     // Dynamic stat values based on backend data and logged-in employee
@@ -828,6 +941,111 @@ const EmployeeDashboard = ({ darkMode, setDarkMode }) => {
                                 </div>
                             )}
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {showRejectionModal && (
+                <div
+                    className="modal-overlay"
+                    style={{zIndex: 9999}}
+                    onClick={handleRejectionBackdrop}
+                    aria-modal="true"
+                    role="dialog"
+                    aria-labelledby="rejection-modal-title"
+                    aria-describedby="rejection-modal-desc"
+                >
+                    <div
+                        className="rejection-modal"
+                        ref={rejectionModalRef}
+                        tabIndex={-1}
+                        role="document"
+                        aria-labelledby="rejection-modal-title"
+                    >
+                        {!showRejectionConfirm ? (
+                            <>
+                                <div className="modal-header">
+                                    <FaExclamationTriangle style={{color: '#FFA726', fontSize: 28, marginRight: 10, verticalAlign: 'middle'}} aria-hidden="true" />
+                                    <span id="rejection-modal-title" style={{fontSize: '1.35rem', fontWeight: 700, color: '#222', verticalAlign: 'middle'}}>
+                                        Reject Application
+                                    </span>
+                                </div>
+                                <div className="modal-body" id="rejection-modal-desc">
+                                    <p style={{marginBottom: 18, fontWeight: 500}}>Please select a reason for rejection:</p>
+                                    <div className="rejection-reasons-list">
+                                        {DEFAULT_REJECTION_REASONS.map((reason, idx) => (
+                                            <label key={idx} className="custom-radio-label">
+                                                <input
+                                                    type="radio"
+                                                    name="rejection-reason"
+                                                    value={reason}
+                                                    checked={selectedRejectionReason === reason}
+                                                    onChange={() => setSelectedRejectionReason(reason)}
+                                                    className="custom-radio-input"
+                                                    tabIndex={0}
+                                                    aria-checked={selectedRejectionReason === reason}
+                                                    aria-label={reason}
+                                                />
+                                                <span className="custom-radio" aria-hidden="true"></span>
+                                                {reason}
+                                            </label>
+                                        ))}
+                                    </div>
+                                    {selectedRejectionReason === 'Other (please specify)' && (
+                                        <textarea
+                                            style={{width: '100%', minHeight: 60, marginTop: 8}}
+                                            placeholder="Enter custom reason..."
+                                            value={rejectionReason}
+                                            onChange={e => setRejectionReason(e.target.value)}
+                                            aria-label="Custom rejection reason"
+                                            required
+                                        />
+                                    )}
+                                    {rejectionError && (
+                                        <div className="input-error" style={{color: '#e53935', marginTop: 10}}>{rejectionError}</div>
+                                    )}
+                                </div>
+                                <div className="modal-footer">
+                                    <button className="btn secondary-btn" onClick={handleRejectionCancel} disabled={rejectionLoading}>Cancel</button>
+                                    <button
+                                        className="btn reject-btn"
+                                        onClick={handleRejectionSubmit}
+                                        disabled={rejectionLoading}
+                                        style={{fontWeight: 600}}
+                                    >
+                                        Reject
+                                    </button>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className="modal-header">
+                                    <FaExclamationTriangle style={{color: '#FFA726', fontSize: 28, marginRight: 10, verticalAlign: 'middle'}} aria-hidden="true" />
+                                    <span style={{fontSize: '1.35rem', fontWeight: 700, color: '#222', verticalAlign: 'middle'}}>
+                                        Confirm Rejection
+                                    </span>
+                                </div>
+                                <div className="modal-body">
+                                    <p style={{marginBottom: 18, fontWeight: 500}}>
+                                        Are you sure you want to reject this application?
+                                    </p>
+                                    <div style={{marginBottom: 12}}>
+                                        <strong>Reason:</strong> {selectedRejectionReason === 'Other (please specify)' ? rejectionReason : selectedRejectionReason}
+                                    </div>
+                                </div>
+                                <div className="modal-footer">
+                                    <button className="btn secondary-btn" onClick={handleRejectionCancel} disabled={rejectionLoading}>Cancel</button>
+                                    <button
+                                        className="btn reject-btn"
+                                        onClick={handleRejectionConfirm}
+                                        disabled={rejectionLoading}
+                                        style={{fontWeight: 600}}
+                                    >
+                                        {rejectionLoading ? 'Rejecting...' : 'Confirm'}
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             )}

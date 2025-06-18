@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { IoMdClose } from "react-icons/io";
 import { FaCopy, FaCheck } from "react-icons/fa";
-import { getAccounts, getHogOwnerDetails } from "../services/api";
+import { getAccounts, getHogOwnerDetails, getRejectedAccounts } from "../services/api";
 import "../css/HogOwners.css";
 
 const HogOwners = ({ isOpen, onClose }) => {
     const [accounts, setAccounts] = useState([]);
+    const [rejectedAccounts, setRejectedAccounts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [search, setSearch] = useState("");
@@ -14,35 +15,69 @@ const HogOwners = ({ isOpen, onClose }) => {
     const [detailsError, setDetailsError] = useState(null);
     const [copied, setCopied] = useState(false);
     const [lightboxImage, setLightboxImage] = useState(null);
+    const [activeTab, setActiveTab] = useState('verified'); // 'verified', 'pending', or 'rejected'
+
+    const formatCoordinate = (coord) => {
+        const num = Number(coord);
+        return !isNaN(num) ? num.toFixed(6) : 'Invalid';
+    };
 
     useEffect(() => {
         if (!isOpen) return;
         setLoading(true);
         setError(null);
-        getAccounts()
-            .then(data => {
-                setAccounts(data);
+        
+        const fetchData = async () => {
+            try {
+                const [accountsData, rejectedData] = await Promise.all([
+                    getAccounts(),
+                    getRejectedAccounts()
+                ]);
+                setAccounts(accountsData);
+                setRejectedAccounts(rejectedData);
                 setLoading(false);
-            })
-            .catch(err => {
+            } catch (err) {
                 setError(err.message);
                 setLoading(false);
-            });
+            }
+        };
+
+        fetchData();
     }, [isOpen]);
 
-    // Defensive: Only show accounts with role 'user' (case-insensitive) and valid status
-    const hogOwners = accounts.filter(acc => acc.role && acc.role.toLowerCase() === 'user' && acc.status && acc.status.toLowerCase() === 'verified');
-
-    // Filter hog owners based on search query
-    const filteredOwners = hogOwners
-        .filter(owner => {
+    // Filter accounts based on active tab and search query
+    const filteredAccounts = (() => {
+        let filtered = [];
             const q = search.toLowerCase();
+
+        switch (activeTab) {
+            case 'verified':
+                filtered = accounts.filter(acc => 
+                    acc.role?.toLowerCase() === 'user' && 
+                    acc.status?.toLowerCase() === 'verified'
+                );
+                break;
+            case 'pending':
+                filtered = accounts.filter(acc => 
+                    acc.role?.toLowerCase() === 'user' && 
+                    acc.status?.toLowerCase() === 'pending'
+                );
+                break;
+            case 'rejected':
+                filtered = rejectedAccounts;
+                break;
+            default:
+                filtered = [];
+        }
+
+        return filtered.filter(owner => {
             return (
-                owner.fullName.toLowerCase().includes(q) ||
-                owner.emailAddress.toLowerCase().includes(q) ||
+                owner.fullName?.toLowerCase().includes(q) ||
+                owner.emailAddress?.toLowerCase().includes(q) ||
                 (owner.contactNumber || "").toLowerCase().includes(q)
             );
         });
+    })();
 
     const handleViewOwner = async (owner) => {
         setLoadingDetails(true);
@@ -108,6 +143,26 @@ const HogOwners = ({ isOpen, onClose }) => {
                 </button>
                 </div>
                 <div className="hog-owners-content">
+                    <div className="owners-tabs">
+                        <button 
+                            className={`tab-button ${activeTab === 'verified' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('verified')}
+                        >
+                            Approved
+                        </button>
+                        <button 
+                            className={`tab-button ${activeTab === 'pending' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('pending')}
+                        >
+                            Pending
+                        </button>
+                        <button 
+                            className={`tab-button ${activeTab === 'rejected' ? 'active' : ''}`}
+                            onClick={() => setActiveTab('rejected')}
+                        >
+                            Rejected
+                        </button>
+                    </div>
                 <div className="owners-search">
                     <input
                         type="text"
@@ -129,20 +184,24 @@ const HogOwners = ({ isOpen, onClose }) => {
                         <th>Email</th>
                         <th>Phone</th>
                         <th>Status</th>
+                                        {activeTab === 'rejected' && <th>Reason</th>}
                         <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredOwners.map(owner => (
+                                    {filteredAccounts.map(owner => (
                         <tr key={owner.uid}>
                             <td>{owner.fullName}</td>
                             <td>{owner.emailAddress}</td>
                             <td>{owner.contactNumber}</td>
-                            <td>{owner.status ? (
-                              <span className={`status-badge ${owner.status.toLowerCase()}`}>{owner.status.charAt(0).toUpperCase() + owner.status.slice(1)}</span>
-                            ) : (
-                              <span className="status-badge pending">Pending</span>
-                            )}</td>
+                                            <td>
+                                                <span className={`status-badge ${owner.status?.toLowerCase()}`}>
+                                                    {owner.status?.charAt(0).toUpperCase() + owner.status?.slice(1)}
+                                                </span>
+                                            </td>
+                                            {activeTab === 'rejected' && (
+                                                <td>{owner.rejectionReason || 'No reason provided'}</td>
+                                            )}
                             <td>
                                                 <button 
                                                     className="action-button view"
@@ -175,7 +234,7 @@ const HogOwners = ({ isOpen, onClose }) => {
                                 <div className="loading">Loading details...</div>
                             ) : detailsError ? (
                                 <div className="error">{detailsError}</div>
-                            ) : (
+                            ) : selectedOwner ? (
                                 <>
                                     {/* Account Overview Section */}
                                     <div className="owner-info-section account-overview">
@@ -196,27 +255,12 @@ const HogOwners = ({ isOpen, onClose }) => {
                                                 </span>
                                             </div>
                                         </div>
-                                        <div className="account-meta">
-                                            <div className="meta-item">
-                                                <span className="meta-label">Member Since</span>
-                                                <span className="meta-value">
-                                                    {new Date(selectedOwner.userCreated).toLocaleDateString()}
-                                                </span>
+                                        {selectedOwner.status?.toLowerCase() === 'rejected' && selectedOwner.rejectionReason && (
+                                            <div className="rejection-reason">
+                                                <h4>Reason for Rejection</h4>
+                                                <p>{selectedOwner.rejectionReason}</p>
                                             </div>
-                                            <div className="meta-item">
-                                                <span className="meta-label">Account ID</span>
-                                                <div className="meta-value-container">
-                                                    <span className="meta-value">{selectedOwner.uid}</span>
-                                                    <button 
-                                                        className="copy-button" 
-                                                        onClick={handleCopyId}
-                                                        title="Copy to clipboard"
-                                                    >
-                                                        {copied ? <FaCheck /> : <FaCopy />}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        )}
                                     </div>
 
                                     {/* Contact Information Section */}
@@ -239,7 +283,7 @@ const HogOwners = ({ isOpen, onClose }) => {
                                                 <div className="info-item coordinates">
                                                     <span className="info-label">Coordinates</span>
                                                     <span className="info-value">
-                                                        {selectedOwner.latitude.toFixed(6)}, {selectedOwner.longitude.toFixed(6)}
+                                                        {formatCoordinate(selectedOwner.latitude)}, {formatCoordinate(selectedOwner.longitude)}
                                                     </span>
                                                 </div>
                                             )}
@@ -355,7 +399,7 @@ const HogOwners = ({ isOpen, onClose }) => {
                                         </div>
                                     )}
                                 </>
-                            )}
+                            ) : <div>No details found.</div>}
                         </div>
                     </div>
                 </div>
