@@ -136,8 +136,12 @@ export function getPendingAccounts() {
 }
 
 // Update Account Status (accept/reject)
-export function updateAccountStatus(uid, status) {
-    return apiRequest(`/accounts/${uid}/status`, "PUT", { status });
+export function updateAccountStatus(uid, status, rejectionReason) {
+    const data = { status };
+    if (status === 'rejected' && rejectionReason) {
+        data.rejectionReason = rejectionReason;
+    }
+    return apiRequest(`/accounts/${uid}/status`, "PUT", data);
 }
 
 export function updatePassword(passwordData) {
@@ -158,6 +162,10 @@ export function getDashboardData() {
 // Hog Owners
 export function getHogOwners() {
     return apiRequest("/hog-owners", "GET");
+}
+
+export function getRejectedAccounts() {
+    return apiRequest("/rejected-accounts", "GET");
 }
 
 // Add Farm

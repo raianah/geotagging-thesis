@@ -331,18 +331,39 @@ app.get("/pending-accounts", authenticateToken, async (req, res) => {
     }
 });
 
+// Get all rejected hog owner accounts
+app.get("/rejected-accounts", authenticateToken, async (req, res) => {
+    try {
+        // Only return rejected user (hog raiser) accounts, not employees
+        const { rows: rejected } = await pool.query(
+            'SELECT uid, "fullName", "emailAddress", "contactNumber", "userCreated", role, status, location, latitude, longitude, "rejectionReason" FROM blnbtghog_owners WHERE LOWER(role) = $1 AND LOWER(status) = $2',
+            ['user', 'rejected']
+        );
+        res.json(rejected);
+    } catch (err) {
+        res.status(500).json({ error: "Failed to retrieve rejected accounts" });
+    }
+});
+
 // Update account status (accept/reject)
 app.put("/accounts/:uid/status", authenticateToken, async (req, res) => {
     const { uid } = req.params;
-    const { status } = req.body;
+    const { status, rejectionReason } = req.body;
     if (!['pending', 'verified', 'rejected'].includes(status)) {
         return res.status(400).json({ error: "Invalid status value" });
     }
     try {
-        await pool.query(
-            'UPDATE blnbtghog_owners SET status = $1 WHERE uid = $2',
-            [status, uid]
-        );
+        if (status === 'rejected') {
+            await pool.query(
+                'UPDATE blnbtghog_owners SET status = $1, "rejectionReason" = $2 WHERE uid = $3',
+                [status, rejectionReason || null, uid]
+            );
+        } else {
+            await pool.query(
+                'UPDATE blnbtghog_owners SET status = $1, "rejectionReason" = NULL WHERE uid = $2',
+                [status, uid]
+            );
+        }
         res.json({ message: `Account status updated to ${status}` });
     } catch (err) {
         res.status(500).json({ error: "Failed to update account status" });
