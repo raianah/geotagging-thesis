@@ -15,22 +15,22 @@ dotenv.config();
 const app = express();
 
 // Configure CORS with more specific options (Development)
-const corsOptions = {
-    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000', 'http://127.0.0.1:3001', 'http://localhost:4493'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-    maxAge: 86400 // 24 hours
-};
-
-// Production
 // const corsOptions = {
-//     origin: ['https://balayanhog2025.thetwlight.xyz', 'http://dono-03.danbot.host:4493'],
+//     origin: ['http://localhost:3000', 'http://localhost:3001', 'http://127.0.0.1:3000', 'http://127.0.0.1:3001', 'http://localhost:4493'],
 //     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 //     allowedHeaders: ['Content-Type', 'Authorization'],
 //     credentials: true,
 //     maxAge: 86400 // 24 hours
 // };
+
+// Production
+const corsOptions = {
+    origin: ['https://balayanhog2025.thetwlight.xyz', 'http://dono-03.danbot.host:4493'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+    maxAge: 86400 // 24 hours
+};
 
 // Apply CORS middleware
 app.use(cors(corsOptions));
@@ -931,8 +931,8 @@ async function startServer() {
         await pool.query("SELECT NOW()");
         console.log("✅ Database connected successfully.");
 
-        app.listen(26229, () => {
-            console.log(`🚀 Server running at http://extreme9i1j.creepercloud.io:26229.`);
+        app.listen(4130, () => {
+            console.log(`🚀 Server running at http://dono-03.danbot.host:4130.`);
         });
     } catch (error) {
         console.error("❌ Failed to connect to the database:", error.message);
