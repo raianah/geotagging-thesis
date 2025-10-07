@@ -9,8 +9,8 @@ export default defineConfig({
     port: 4493,
     proxy: {
       '/api': {
-        // target: 'http://extreme9i1j.creepercloud.io:26229',
-        target: 'http://localhost:26229',
+        // target: 'http://dono-03.danbot.host:4130',
+        target: 'http://localhost:4130',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, '')
